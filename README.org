@@ -1,0 +1,35 @@
+* Shelob
+
+
+  Shelob is a minimal wrapper around [[http://htmlunit.sourceforge.net/][HtmlUnit]].
+
+** Rationale
+
+   HtmlUnit is a Java library that provides a "GUI-Less browser for Java
+   programs". Shelob is a tiny wrapper around it to make the use of it more
+   idiomatic and adherent to the Clojure way of coding.
+
+** Example
+
+   A simple DuckDuckGo search:
+   + Type "clojure" on the search field
+   + Click on the magnify glass to perform the search
+   + Print the text of the first result
+
+   #+begin_src clojure
+     (require '[shelob.core :as shelob])
+
+     (let [client (shelob/web-client shelob/firefox)
+	   document (shelob/page client "https://duckduckgo.com")
+	   input-field (shelob/element-by-id document "search_form_input_homepage")
+	   submit-button (shelob/element-by-id document "search_button_homepage")]
+       (shelob/type-value input-field "clojure")
+       (-> (shelob/click-on submit-button)
+	   (shelob/element-by-id "r1-0")
+	   .asText
+	   println))
+   #+end_src
+
+** License
+   Copyright © 2019 7bridges s.r.l.
+   Distributed under the Apache License 2.0.
