@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>eu.7bridges</groupId>
   <artifactId>shelob</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
   <name>shelob</name>
   <dependencies>
     <dependency>
@@ -29,7 +29,7 @@
   <scm>
     <connection>scm:git:git://github.com/7bridges-eu/shelob.git</connection>
     <developerConnection>scm:git:ssh://github.com/7bridges-eu/shelob.git</developerConnection>
-    <tag>v0.1.0</tag>
+    <tag>v0.1.1</tag>
     <url>https://github.com/7bridges-eu/shelob</url>
   </scm>
 </project>
