@@ -114,6 +114,11 @@
   [document el-name]
   (.getElementsByName document el-name))
 
+(defn element-by-xpath
+  "Return the element that satisfies a XPath query."
+  [document xpath]
+  (.getFirstByXPath document xpath))
+
 (defn elements-by-xpath
   "Return a vector of elements that satisfies a XPath query."
   [document xpath]
