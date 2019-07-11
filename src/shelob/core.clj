@@ -156,12 +156,35 @@
   [document]
   (.getHead document))
 
-(defn htmlElementByAccessKey
+(defn html-element-by-access-key
   "Return the `HtmlElement` in `document` assigned to `access-key`."
   [document access-key]
   (.getHtmlElementByAccessKey access-key))
 
+(defn html-element-by-id
+  "Return the `HtmlElement` in `document` with the specified `id`."
+  [document id]
+  (.getHtmlElementById document id))
 
+(defn html-elements-by-access-key
+  "Return a list of `HtmlElement` in `document` assigned to `access-key`."
+  [document access-key]
+  (.getHtmlElementsByAccessKey access-key))
+
+(defn meta-tags
+  "Return a list of `HtmlMeta` tags for a http-equiv `value`."
+  [document value]
+  (.getMetaTags document value))
+
+(defn namespaces
+  "Return all the namespaces defined at the root of `document`."
+  [document]
+  (.getNamespaces document))
+
+(defn title-text
+  "Return the title of `document` or an empty string if not specified."
+  [document]
+  (.getTitleText document))
 
 (defn ^Page type-value
   "Type a `value` in the `input` element."
