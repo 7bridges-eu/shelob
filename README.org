@@ -1,6 +1,5 @@
 * Shelob
 
-
   Shelob is a minimal wrapper around [[http://htmlunit.sourceforge.net/][HtmlUnit]].
 
 ** Rationale
@@ -10,6 +9,10 @@
 
    Shelob is a tiny wrapper to make it more idiomatic and adherent
    to the Clojure way of coding.
+
+** Version
+
+   [[https://clojars.org/shelob/latest-version.svg]]
 
 ** Example
 
