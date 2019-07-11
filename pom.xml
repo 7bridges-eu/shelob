@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>shelob</groupId>
+  <groupId>eu.7bridges</groupId>
   <artifactId>shelob</artifactId>
   <version>0.1.0</version>
   <name>shelob</name>
@@ -26,4 +26,10 @@
       <url>https://repo.clojars.org/</url>
     </repository>
   </repositories>
+  <scm>
+    <connection>scm:git:git://github.com/7bridges-eu/shelob.git</connection>
+    <developerConnection>scm:git:ssh://github.com/7bridges-eu/shelob.git</developerConnection>
+    <tag>v0.1.0</tag>
+    <url>https://github.com/7bridges-eu/shelob</url>
+  </scm>
 </project>
