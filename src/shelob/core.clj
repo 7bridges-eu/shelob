@@ -181,6 +181,16 @@
   [document]
   (.getNamespaces document))
 
+(defn tabbable-element-ids
+  "Return a list of ids matching the tabbable elements on `document`."
+  [document]
+  (.getTabbableElementIds document))
+
+(defn tabbable-elements
+  "Return a list of `HtmlElement` representing the tabbable elements on `document`."
+  [document]
+  (.getTabbableElements document))
+
 (defn title-text
   "Return the title of `document` or an empty string if not specified."
   [document]
