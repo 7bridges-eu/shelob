@@ -1,0 +1,9 @@
+/classes
+/checkouts
+pom.xml.asc
+*.jar
+*.class
+/.nrepl-port
+/.cpcache
+.hgignore
+.hg/
