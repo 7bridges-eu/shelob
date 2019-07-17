@@ -38,12 +38,12 @@
     :xpath (By/xpath query)))
 
 (defn find-element
-  [starting-point by]
-  (.findElement starting-point by))
+  [starting-point locator]
+  (.findElement starting-point locator))
 
 (defn find-elements
-  [starting-point by]
-  (.findElements starting-point by))
+  [starting-point locator]
+  (.findElements starting-point locator))
 
 (defn children
   [starting-point]
@@ -61,8 +61,8 @@
   element)
 
 (defn fill-by
-  [starting-point by text]
-  (-> (find-element starting-point by)
+  [starting-point locator text]
+  (-> (find-element starting-point locator)
       (fill text))
   starting-point)
 
@@ -72,7 +72,25 @@
   element)
 
 (defn click-by
-  [starting-point by]
-  (-> (find-element starting-point by)
+  [starting-point locator]
+  (-> (find-element starting-point locator)
       click)
   starting-point)
+
+(defn attribute
+  [element attribute-name]
+  (.getAttribute element attribute-name))
+
+(defn attribute-by
+  [starting-point locator attribute-name]
+  (-> (find-element starting-point locator)
+      (attribute attribute-name)))
+
+(defn text
+  [element]
+  (.getText element))
+
+(defn text-by
+  [starting-point locator]
+  (-> (find-element starting-point locator)
+      text))
