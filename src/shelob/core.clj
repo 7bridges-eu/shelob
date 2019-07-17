@@ -1,11 +1,13 @@
 (ns shelob.core
   (:import [org.openqa.selenium WebDriver By]
-           [org.openqa.selenium.firefox FirefoxDriver]
+           [org.openqa.selenium.firefox FirefoxDriver FirefoxOptions]
            [org.openqa.selenium.support.ui WebDriverWait ExpectedConditions]))
 
 (defn web-driver
   []
-  (FirefoxDriver. ))
+  (-> (FirefoxOptions.)
+      (.setHeadless true)
+      (FirefoxDriver. )))
 
 (defn go
   [driver url]
