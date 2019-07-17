@@ -23,3 +23,31 @@
 (defn find-element
   [starting-point by]
   (.findElement starting-point by))
+
+(defn find-elements
+  [starting-point by]
+  (.findElements starting-point by))
+
+(defn fill
+  [element text]
+  (->> [text]
+       into-array
+       (.sendKeys element))
+  element)
+
+(defn fill-by
+  [starting-point by text]
+  (-> (find-element starting-point by)
+      (fill text))
+  starting-point)
+
+(defn click
+  [element]
+  (.click element)
+  element)
+
+(defn click-by
+  [starting-point by]
+  (-> (find-element starting-point by)
+      click)
+  starting-point)
