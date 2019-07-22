@@ -1,14 +1,14 @@
 * Shelob
 
-  Shelob is a minimal wrapper around [[http://htmlunit.sourceforge.net/][HtmlUnit]].
+  Shelob is a minimal wrapper around [[https://www.seleniumhq.org/][Selenium]].
 
 ** Rationale
 
-   HtmlUnit is a Java library that provides a "GUI-Less browser for Java
-   programs".
+   Selenium automates web browsing, primarily for testing and
+   administration purposes.
 
-   Shelob is a tiny wrapper to make it more idiomatic and adherent
-   to the Clojure way of coding.
+   Shelob is a tiny wrapper to make it more idiomatic and adherent to the
+   Clojure way of coding.
 
 ** Version
 
@@ -24,15 +24,12 @@
    #+begin_src clojure
      (require '[shelob.core :as shelob])
 
-     (let [client (shelob/web-client shelob/firefox)
-	   document (shelob/page client "https://duckduckgo.com")
-	   input-field (shelob/element-by-id document "search_form_input_homepage")
-	   submit-button (shelob/element-by-id document "search_button_homepage")]
-       (shelob/type-value input-field "clojure")
-       (-> (shelob/click-on submit-button)
-	   (shelob/element-by-id "r1-0")
-	   .asText
-	   println))
+     (let [driver (shelob/go (shelob/web-driver) "https://duckduckgo.com")
+            input-field (shelob/fill-by driver (shelob/by :id "search_form_input_homepage") "clojure")
+            submit-button (shelob/click-by driver (shelob/by :id "search_button_homepage"))]
+        (-> (shelob/find-element driver (shelob/by :id "r1-0"))
+            shelob/text
+            println))
    #+end_src
 
 ** License
