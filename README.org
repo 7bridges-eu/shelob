@@ -12,7 +12,7 @@
 
 ** Version
 
-   https://img.shields.io/clojars/v/eu.7bridges/shelob.svg
+   [[https://img.shields.io/clojars/v/eu.7bridges/shelob.svg]]
 
 ** Example
 
