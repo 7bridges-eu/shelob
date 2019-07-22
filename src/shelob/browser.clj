@@ -9,7 +9,7 @@
   []
   (System/setProperty FirefoxDriver$SystemProperty/BROWSER_LOGFILE "/dev/null")
   (-> (FirefoxOptions.)
-      (.setHeadless true)      
+      (.setHeadless true)
       (FirefoxDriver. )))
 
 (defn go
