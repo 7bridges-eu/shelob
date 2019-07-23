@@ -3,7 +3,7 @@
   (:import
    [org.openqa.selenium WebDriver By]
    [org.openqa.selenium.firefox FirefoxDriver FirefoxDriver$SystemProperty FirefoxOptions]
-   [org.openqa.selenium.support.ui WebDriverWait ExpectedConditions]))
+   [org.openqa.selenium.support.ui WebDriverWait]))
 
 (defn web-driver
   []
