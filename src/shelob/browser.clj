@@ -17,18 +17,12 @@
   (.get driver url)
   driver)
 
-(defn expected-condition
-  [condition locator]
-  (case condition
-    :visibility (ExpectedConditions/visibilityOfElementLocated locator)))
-
 (defn wait-for
-  ([driver condition locator]
-   (wait-for driver condition locator 2))
-  ([driver condition locator timeout]
-   (let [wdw (WebDriverWait. driver timeout)
-         ec (expected-condition condition locator)]
-     (.until wdw ec))))
+  ([driver condition]
+   (wait-for driver condition 2))
+  ([driver condition timeout]
+   (let [wdw (WebDriverWait. driver timeout)]
+     (.until wdw condition))))
 
 (defn by
   [context query]
