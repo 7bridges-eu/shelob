@@ -129,15 +129,16 @@
 
 (defn webdriver-thread
   [init-fn chan-in chan-out]
-  (as/go-loop [webdriver (init-webdriver init-fn)]
-    (let [f (as/<! chan-in)]
-      (->> (f webdriver)
-           (as/>! chan-out)))
-    (recur webdriver)))
+  (as/thread
+    (loop [webdriver (init-webdriver init-fn)]
+      (if-let [f (as/<!! chan-in)]
+        (do (->> (f webdriver)
+                 (as/>!! chan-out))
+            (recur webdriver))
+        (.close webdriver)))))
 
 (defn webdriver-pool
   [init-fn chan-in chan-out pool-size]
-  (doall
-   (repeatedly pool-size #(webdriver-thread init-fn
-                                            chan-in
-                                            chan-out))))
+  (dotimes [thread-nr pool-size]
+    (println "Start webdriver thread " thread-nr)
+    (webdriver-thread init-fn chan-in chan-out)))
