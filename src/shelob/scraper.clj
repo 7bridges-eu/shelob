@@ -61,13 +61,23 @@
 
 (defn text
   "Return the text of an element."
-  [^Element element]
-  (.text element))
+  ([^Element element]
+   (text element ""))
+  ([^Element element default-return]
+   (try
+     (.text element)
+     (catch Exception e
+       default-return))))
 
 (defn attribute
   "Return the attribute value of an element."
-  [^Node element ^String attribute]
-  (.attr element attribute))
+  ([^Node element ^String attribute-name]
+   (attribute element attribute-name ""))
+  ([^Node element ^String attribute-name default-return]
+   (try
+     (.attr element attribute-name)
+     (catch Exception e
+       default-return))))
 
 (defn scraper-thread
   "Initialize a scraper thread."
