@@ -41,6 +41,11 @@
   []
   (SafariDriver.))
 
+(defn clean-cookies
+  [driver]
+  (.. driver manage deleteAllCookies)
+  driver)
+
 (defn go
   [driver url]
   (.get driver url)
