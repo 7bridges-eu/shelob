@@ -75,11 +75,10 @@
   (as/thread
     (loop []
       (when-let [data (as/<!! chan-in)]
-        (do (try (->> data
-                      scraper-fn
-                      (as/>!! chan-out))
-                 (catch Exception e (println e)))
-            (recur))))))
+        (->> data
+             scraper-fn
+             (as/>!! chan-out))
+        (recur)))))
 
 (defn scraper-pool
   "Initialize a pool of scraper-thread"
