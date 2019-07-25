@@ -8,7 +8,8 @@
            :deploy {:extra-deps {deps-deploy {:mvn/version "RELEASE"}}
                     :main-opts ["-m" "deps-deploy.deps-deploy" "deploy" "target/shelob.jar" "true"]}}
 
- :deps {org.clojure/clojure {:mvn/version "1.10.1"}
+ :deps {com.taoensso/timbre {:mvn/version "4.10.0"}
+        org.clojure/clojure {:mvn/version "1.10.1"}
         org.clojure/core.async {:mvn/version "0.4.500"}
         org.jsoup/jsoup {:mvn/version "1.12.1"}
         org.seleniumhq.selenium/selenium-server {:mvn/version "3.141.59"}}
