@@ -25,9 +25,9 @@
      (require '[shelob.core :as shelob])
 
      (let [driver (shelob/go (shelob/web-driver) "https://duckduckgo.com")
-            input-field (shelob/fill-by driver (shelob/by :id "search_form_input_homepage") "clojure")
-            submit-button (shelob/click-by driver (shelob/by :id "search_button_homepage"))]
-        (-> (shelob/find-element driver (shelob/by :id "r1-0"))
+           input-field (shelob/fill-by driver (shelob/by :id "search_form_input_homepage") "clojure")
+           submit-button (shelob/click-by driver (shelob/by :id "search_button_homepage"))]
+       (-> (shelob/find-element driver (shelob/by :id "r1-0"))
             shelob/text
             println))
    #+end_src
