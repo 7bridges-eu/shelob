@@ -1,3 +1,17 @@
+;; Copyright 2019 7bridges s.r.l.
+;;
+;; Licensed under the Apache License, Version 2.0 (the "License");
+;; you may not use this file except in compliance with the License.
+;; You may obtain a copy of the License at
+;;
+;; http://www.apache.org/licenses/LICENSE-2.0
+;;
+;; Unless required by applicable law or agreed to in writing, software
+;; distributed under the License is distributed on an "AS IS" BASIS,
+;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;; See the License for the specific language governing permissions and
+;; limitations under the License.
+
 (ns shelob.browser
   (:require [clojure.core.async :as as])
   (:import
@@ -132,18 +146,25 @@
   [init-fn]
   (init-fn (firefox-driver)))
 
+(defn- webdriver-exec
+  [f webdriver chan-out chan-err]
+  (try
+    (let [result (f webdriver)]
+      (as/>!! chan-out result))
+    (catch Exception e
+      (as/>!! chan-err e))))
+
 (defn webdriver-thread
-  [init-fn chan-in chan-out]
+  [init-fn chan-in chan-out chan-err]
   (as/thread
     (loop [webdriver (init-webdriver init-fn)]
       (if-let [f (as/<!! chan-in)]
-        (do (->> (f webdriver)
-                 (as/>!! chan-out))
-            (recur webdriver))
+        (do
+          (webdriver-exec f webdriver chan-out chan-err)
+          (recur webdriver))
         (.close webdriver)))))
 
 (defn webdriver-pool
-  [init-fn chan-in chan-out pool-size]
+  [init-fn chan-in chan-out chan-err pool-size]
   (dotimes [thread-nr pool-size]
-    (println "Start webdriver thread " thread-nr)
-    (webdriver-thread init-fn chan-in chan-out)))
+    (webdriver-thread init-fn chan-in chan-out chan-err)))
