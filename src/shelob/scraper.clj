@@ -93,19 +93,25 @@
      (catch Exception e
        default-return))))
 
+(defn- scraper-exec
+  [f data chan-out chan-err]
+  (try
+    (let [result (f data)]
+      (as/>!! chan-out result))
+    (catch Exception e
+      (as/>!! chan-err e))))
+
 (defn scraper-thread
   "Initialize a scraper thread."
-  [scraper-fn chan-in chan-out]
+  [scraper-fn chan-in chan-out chan-err]
   (as/thread
     (loop []
       (when-let [data (as/<!! chan-in)]
-        (->> data
-             scraper-fn
-             (as/>!! chan-out))
+        (scraper-exec scraper-fn data chan-out chan-err)
         (recur)))))
 
 (defn scraper-pool
   "Initialize a pool of scraper-thread"
-  [scraper-fn chan-in chan-out pool-size]
+  [scraper-fn chan-in chan-out chan-err pool-size]
   (dotimes [thread-nr pool-size]
-    (scraper-thread scraper-fn chan-in chan-out)))
+    (scraper-thread scraper-fn chan-in chan-out chan-err)))
