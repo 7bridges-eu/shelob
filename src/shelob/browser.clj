@@ -68,8 +68,8 @@
 (defn wait-for
   ([driver condition]
    (wait-for driver condition 2))
-  ([driver condition timeout]
-   (let [wdw (WebDriverWait. driver timeout)]
+  ([driver condition timeout-seconds]
+   (let [wdw (WebDriverWait. driver timeout-seconds)]
      (.until wdw condition))))
 
 (defn by
