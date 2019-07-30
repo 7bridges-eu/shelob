@@ -27,7 +27,7 @@
    [org.openqa.selenium.opera OperaDriver]
    [org.openqa.selenium.safari SafariDriver]))
 
-(def ^:const pool-size 10)
+(def ^:const pool-size 3)
 
 (timbre/merge-config!
  {:appenders {:spit (appenders/spit-appender {:fname "shelob.log"})}})
@@ -99,13 +99,14 @@
         (.close webdriver)))))
 
 (defn- navigate-to
-  [webdriver]
-  (fn [url]
-    (-> (shb/go webdriver url)
-        .getTitle)))
+  [webdriver url]
+  (println "Navigate to" url (.hashCode webdriver))
+  (-> (shb/go webdriver url)
+      .getTitle))
 
 (defn- scrape-data
   [source]
+  (println "Scraping" source)
   (clojure.string/split source #" "))
 
 (defn- webdriver-pool
@@ -114,3 +115,20 @@
             (conj acc (init-webdriver :firefox init-fn)))
           []
           (range pool-size)))
+
+(defn- assign-webdriver
+  [pool]
+  (fn [i url]
+    (println i url)
+    (let [webdriver-idx (mod i (count pool))
+          webdriver (nth pool webdriver-idx)]
+      [webdriver url])))
+
+(defn generate-xf
+  [navigate-fn scrape-fn]
+  (let [pool (webdriver-pool identity pool-size)
+        assigner (assign-webdriver pool)]
+    (println (type assigner))
+    (comp (map-indexed assigner)
+          (map #(apply navigate-fn %))
+          (map scrape-fn))))
