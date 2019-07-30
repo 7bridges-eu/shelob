@@ -111,6 +111,6 @@
 (defn- webdriver-pool
   [init-fn pool-size]
   (reduce (fn [acc _]
-            (conj acc (shb/init-webdriver init-fn)))
+            (conj acc (init-webdriver :firefox init-fn)))
           []
           (range pool-size)))
