@@ -15,6 +15,7 @@
 (ns shelob.core
   (:require
    [clojure.core.async :as as]
+   [clojure.string :as s]
    [shelob.browser :as shb]
    [shelob.scraper :as shs]
    [taoensso.timbre :as timbre]
@@ -100,14 +101,12 @@
 
 (defn- navigate-to
   [webdriver url]
-  (println "Navigate to" url (.hashCode webdriver))
   (-> (shb/go webdriver url)
       .getTitle))
 
 (defn- scrape-data
   [source]
-  (println "Scraping" source)
-  (clojure.string/split source #" "))
+  (s/split source #" "))
 
 (defn- webdriver-pool
   [init-fn pool-size]
@@ -116,19 +115,15 @@
           []
           (range pool-size)))
 
-(defn- assign-webdriver
-  [pool]
-  (fn [i url]
-    (println i url)
-    (let [webdriver-idx (mod i (count pool))
-          webdriver (nth pool webdriver-idx)]
-      [webdriver url])))
-
-(defn generate-xf
+(defn navigate-and-scrape-xf
   [navigate-fn scrape-fn]
-  (let [pool (webdriver-pool identity pool-size)
-        assigner (assign-webdriver pool)]
-    (println (type assigner))
-    (comp (map-indexed assigner)
-          (map #(apply navigate-fn %))
-          (map scrape-fn))))
+  (comp (map #(apply navigate-fn %))
+        (map scrape-fn)))
+
+(defn navigate-and-scrape
+  [init-fn urls]
+  (let [in-ch (as/chan pool-size (navigate-and-scrape-xf navigate-to scrape-data))
+        pool (webdriver-pool init-fn pool-size)
+        data (map vector (cycle pool) urls)]
+    (as/go (as/onto-chan in-ch data))
+    (as/<!! (as/into [] in-ch))))
