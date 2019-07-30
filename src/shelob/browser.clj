@@ -13,47 +13,9 @@
 ;; limitations under the License.
 
 (ns shelob.browser
-  (:require [clojure.core.async :as as])
   (:import
    [org.openqa.selenium WebDriver By]
-   [org.openqa.selenium.chrome ChromeDriver ChromeOptions]
-   [org.openqa.selenium.edge EdgeDriver]
-   [org.openqa.selenium.ie InternetExplorerDriver]
-   [org.openqa.selenium.firefox FirefoxDriver FirefoxDriver$SystemProperty FirefoxOptions]
-   [org.openqa.selenium.opera OperaDriver]
-   [org.openqa.selenium.safari SafariDriver]
    [org.openqa.selenium.support.ui WebDriverWait]))
-
-(defn chrome-driver
-  []
-  (System/setProperty "webdriver.chrome.silentLogging" "true")
-  (System/setProperty "webdriver.chrome.silentOutput" "true")
-  (-> (ChromeOptions.)
-      (.setHeadless true)
-      (ChromeDriver.)))
-
-(defn edge-driver
-  []
-  (EdgeDriver.))
-
-(defn firefox-driver
-  []
-  (System/setProperty FirefoxDriver$SystemProperty/BROWSER_LOGFILE "/dev/null")
-  (-> (FirefoxOptions.)
-      (.setHeadless true)
-      (FirefoxDriver.)))
-
-(defn internet-explorer-driver
-  []
-  (InternetExplorerDriver.))
-
-(defn opera-driver
-  []
-  (OperaDriver.))
-
-(defn safari-driver
-  []
-  (SafariDriver.))
 
 (defn clean-cookies
   [driver]
@@ -141,30 +103,3 @@
   [starting-point locator]
   (-> (find-element starting-point locator)
       text))
-
-(defn- init-webdriver
-  [init-fn]
-  (init-fn (firefox-driver)))
-
-(defn- webdriver-exec
-  [f webdriver chan-out chan-err]
-  (try
-    (let [result (f webdriver)]
-      (as/>!! chan-out result))
-    (catch Exception e
-      (as/>!! chan-err e))))
-
-(defn webdriver-thread
-  [init-fn chan-in chan-out chan-err]
-  (as/thread
-    (loop [webdriver (init-webdriver init-fn)]
-      (if-let [f (as/<!! chan-in)]
-        (do
-          (webdriver-exec f webdriver chan-out chan-err)
-          (recur webdriver))
-        (.close webdriver)))))
-
-(defn webdriver-pool
-  [init-fn chan-in chan-out chan-err pool-size]
-  (dotimes [thread-nr pool-size]
-    (webdriver-thread init-fn chan-in chan-out chan-err)))
