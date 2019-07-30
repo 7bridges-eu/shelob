@@ -15,6 +15,8 @@
 (ns shelob.core
   (:require
    [clojure.core.async :as as]
+   [shelob.browser :as shb]
+   [shelob.scraper :as shs]
    [taoensso.timbre :as timbre]
    [taoensso.timbre.appenders.core :as appenders])
   (:import
@@ -96,10 +98,19 @@
           (recur webdriver))
         (.close webdriver)))))
 
-(defn webdriver-pool
-  [init-fn]
-  (let [chan-in (as/chan)
-        chan-out (as/chan)
-        chan-err (as/chan)]
-    (dotimes [thread-nr pool-size]
-      (webdriver-thread init-fn chan-in chan-out chan-err))))
+(defn- navigate-to
+  [webdriver]
+  (fn [url]
+    (-> (shb/go webdriver url)
+        .getTitle)))
+
+(defn- scrape-data
+  [source]
+  (clojure.string/split source #" "))
+
+(defn- webdriver-pool
+  [init-fn pool-size]
+  (reduce (fn [acc _]
+            (conj acc (shb/init-webdriver init-fn)))
+          []
+          (range pool-size)))
