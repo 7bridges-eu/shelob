@@ -17,7 +17,6 @@
    [clojure.core.async :as as]
    [clojure.string :as s]
    [shelob.browser :as shb]
-   [shelob.scraper :as shs]
    [taoensso.timbre :as timbre]
    [taoensso.timbre.appenders.core :as appenders])
   (:import
@@ -28,7 +27,7 @@
    [org.openqa.selenium.opera OperaDriver]
    [org.openqa.selenium.safari SafariDriver]))
 
-(def ^:const pool-size 3)
+(def ^:const pool-size 10)
 
 (timbre/merge-config!
  {:appenders {:spit (appenders/spit-appender {:fname "shelob.log"})}})
@@ -118,11 +117,11 @@
 (defn navigate-and-scrape-xf
   [navigate-fn scrape-fn]
   (comp (map #(apply navigate-fn %))
-        (map scrape-fn)))
+        (mapcat scrape-fn)))
 
 (defn navigate-and-scrape
-  [init-fn urls]
-  (let [in-ch (as/chan pool-size (navigate-and-scrape-xf navigate-to scrape-data))
+  [init-fn navigate-fn scrape-fn urls]
+  (let [in-ch (as/chan pool-size (navigate-and-scrape-xf navigate-fn scrape-fn))
         pool (webdriver-pool init-fn pool-size)
         data (map vector (cycle pool) urls)]
     (as/go (as/onto-chan in-ch data))
