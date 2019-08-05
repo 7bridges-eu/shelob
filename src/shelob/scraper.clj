@@ -80,7 +80,7 @@
   ([^Element element default-return]
    (try
      (.text element)
-     (catch Exception e
+     (catch Exception _
        default-return))))
 
 (defn attribute
@@ -90,7 +90,7 @@
   ([^Node element ^String attribute-name default-return]
    (try
      (.attr element attribute-name)
-     (catch Exception e
+     (catch Exception _
        default-return))))
 
 (defn- scraper-exec
@@ -113,5 +113,5 @@
 (defn scraper-pool
   "Initialize a pool of scraper-thread"
   [scraper-fn chan-in chan-out chan-err pool-size]
-  (dotimes [thread-nr pool-size]
+  (dotimes [_ pool-size]
     (scraper-thread scraper-fn chan-in chan-out chan-err)))
