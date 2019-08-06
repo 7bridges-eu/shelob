@@ -80,24 +80,6 @@
   ([browser init-fn]
    (init-fn (web-driver browser))))
 
-(defn- webdriver-exec
-  [f webdriver chan-out chan-err]
-  (try
-    (let [result (f webdriver)]
-      (as/>!! chan-out result))
-    (catch Exception e
-      (as/>!! chan-err e))))
-
-(defn webdriver-thread
-  [init-fn chan-in chan-out chan-err]
-  (as/thread
-    (loop [webdriver (init-webdriver init-fn)]
-      (if-let [f (as/<!! chan-in)]
-        (do
-          (webdriver-exec f webdriver chan-out chan-err)
-          (recur webdriver))
-        (.close webdriver)))))
-
 (defn- navigate-to
   [webdriver url]
   (-> (shb/go webdriver url)
