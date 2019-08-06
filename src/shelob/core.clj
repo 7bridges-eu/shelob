@@ -114,6 +114,12 @@
           []
           (range pool-size)))
 
+(defn- close-pool
+  [pool result]
+  (doseq [driver pool]
+    (.close driver))
+  result)
+
 (defn navigate-and-scrape-xf
   [navigate-fn scrape-fn]
   (comp (map #(apply navigate-fn %))
@@ -125,4 +131,4 @@
         pool (webdriver-pool init-fn pool-size)
         data (map vector (cycle pool) urls)]
     (as/go (as/onto-chan in-ch data))
-    (as/<!! (as/into [] in-ch))))
+    (close-pool pool (as/<!! (as/into [] in-ch)))))
