@@ -109,8 +109,12 @@
 
 (defn navigate-and-scrape
   [init-fn navigate-fn scrape-fn urls]
-  (let [in-ch (as/chan pool-size (navigate-and-scrape-xf navigate-fn scrape-fn))
-        pool (webdriver-pool init-fn pool-size)
-        data (map vector (cycle pool) urls)]
-    (as/go (as/onto-chan in-ch data))
-    (close-pool pool (as/<!! (as/into [] in-ch)))))
+  (let [pool (webdriver-pool init-fn pool-size)]
+    (try
+      (let [in-ch (as/chan pool-size (navigate-and-scrape-xf navigate-fn scrape-fn))
+            data (map vector (cycle pool) urls)]
+        (as/go (as/onto-chan in-ch data))
+        (close-pool pool (as/<!! (as/into [] in-ch))))
+      (catch Exception e
+        (close-pool pool e)
+        (throw e)))))
