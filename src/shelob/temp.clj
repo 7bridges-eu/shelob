@@ -24,7 +24,7 @@
 (defn available-driver
   [pool]
   (->> pool
-       (filter (fn [[k v]] (:available v)))
+       (filter (fn [[_ v]] (:available v)))
        first))
 
 (defn- ->proxy [http ssl]
@@ -73,12 +73,11 @@
 
 
 (defn example []
-  (let [context {:driver-options {:driver :firefox}}]
-    (let [context (init context)
-          in-chan (get-in context [:channels :browser-in])
-          out-chan (get-in context [:channels :browser-out])]
-      (as/onto-chan in-chan [{:msg :go :url "https://7bridges.eu"}
-                             {:msg :get-title}])
-      (as/go-loop []
-        (println (as/<! out-chan))
-        (recur)))))
+  (let [context (init {:driver-options {:driver :firefox}})
+        in-chan (get-in context [:channels :browser-in])
+        out-chan (get-in context [:channels :browser-out])]
+    (as/onto-chan in-chan [{:msg :go :url "https://7bridges.eu"}
+                           {:msg :get-title}])
+    (as/go-loop []
+      (println (as/<! out-chan))
+      (recur))))
