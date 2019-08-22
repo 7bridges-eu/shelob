@@ -5,9 +5,10 @@
 (defmulti browser-command :msg)
 
 (defmethod browser-command :go [{:keys [driver url]}]
-  (println "Going to" url)
   (shb/go driver url))
 
-(defmethod browser-command :get-title [{:keys [driver]}]
-  (println "Get title")
+(defmethod browser-command :title [{:keys [driver]}]
   (.getTitle driver))
+
+(defmethod browser-command :source [{:keys [driver]}]
+  (.getPageSource driver))
