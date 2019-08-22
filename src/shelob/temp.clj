@@ -57,7 +57,6 @@
                  (throw (ex-info (str "Invalid browser type: " driver-type) {})))]
     driver))
 
-
 (defn init-driver-pool [ctx]
   (let [pool-size (:pool-size ctx 5)]
     (dotimes [_ pool-size]
@@ -70,7 +69,6 @@
 (defn init [ctx]
   (-> ctx
       init-driver-pool))
-
 
 (defn example []
   (let [context (init {:driver-options {:driver :firefox}})
