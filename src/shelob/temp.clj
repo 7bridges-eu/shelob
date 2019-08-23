@@ -1,7 +1,6 @@
 (ns shelob.temp
   (:require
    [clojure.core.async :as as]
-   [shelob.browser :as shb]
    [shelob.browser.commands :as shc])
   (:import
    [org.openqa.selenium.chrome ChromeDriver ChromeOptions]

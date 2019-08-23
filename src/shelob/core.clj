@@ -16,7 +16,6 @@
   (:require
    [clojure.core.async :as as]
    [clojure.string :as s]
-   [shelob.browser :as shb]
    [taoensso.timbre :as timbre]
    [taoensso.timbre.appenders.core :as appenders])
   (:import
@@ -79,11 +78,6 @@
    (web-driver browser))
   ([browser init-fn]
    (init-fn (web-driver browser))))
-
-(defn- navigate-to
-  [webdriver url]
-  (-> (shb/go webdriver url)
-      .getTitle))
 
 (defn- scrape-data
   [source]
