@@ -1,7 +1,8 @@
 (ns shelob.temp
   (:require
    [clojure.core.async :as as]
-   [shelob.browser :as shb])
+   [shelob.browser :as shb]
+   [shelob.scraper :as shs])
   (:import
    [org.openqa.selenium.chrome ChromeDriver ChromeOptions]
    [org.openqa.selenium.edge EdgeDriver]
@@ -103,12 +104,12 @@
 (defn- to-vector [x]
   (if (vector? x) x (vector x)))
 
-(defn- exec-listener
+(defn- driver-listener
   "Create a command executor listener. Messages should always be vectors."
   [ctx]
   (let [driver-options (:driver-options ctx)
         in-ch (get-in ctx [:channels :messages])
-        scrapers-ch (get-in ctx [:channels :scraper])]
+        out-ch (get-in ctx [:channels :scraper])]
     (as/thread
       (loop [driver (init-driver driver-options)]
         (when-let [messages (as/<!! in-ch)]
@@ -122,16 +123,32 @@
             (->> (assoc message :driver driver)
                  shb/browser-command))
           (->> (.getPageSource driver)
-               (as/>!! scrapers-ch))
+               (as/>!! out-ch))
           (recur driver))))))
 
 (defn init-executors [ctx]
   (let [pool-size (:pool-size ctx 5)]
     (dotimes [_ pool-size]
-      (exec-listener ctx)))
+      (driver-listener ctx)))
   ctx)
 
+(defn- scraper-listener [ctx]
+  (let [in-ch (get-in ctx [:channels :scraper])
+        out-ch (get-in ctx [:channels :results])
+        scrape-fn (:scrape-fn ctx)]
+    (as/thread
+      (loop []
+        (when-let [source (as/<!! in-ch)]
+          (->> source
+               shs/parse
+               scrape-fn
+               (as/>!! out-ch))
+          (recur))))))
+
 (defn init-scrapers [ctx]
+  (let [pool-size (:pool-size ctx 5)]
+    (dotimes [_ pool-size]
+      (scraper-listener ctx)))
   ctx)
 
 (defn init [ctx]
@@ -140,15 +157,16 @@
       init-executors
       init-scrapers))
 
+(defn scrape-fn [document]
+  (shs/text (shs/select-first document "div.col-lg-6:nth-child(1) > div:nth-child(1) > p:nth-child(2)")))
+
 (defn example []
   (let [context (init {:driver-options {:browser :firefox}
-                       :pool-size 2})
+                       :pool-size 2
+                       :scrape-fn scrape-fn})
         in-chan (get-in context [:channels :messages])
-        out-chan (get-in context [:channels :scraper])]
-    (as/onto-chan in-chan [[{:msg :go :url "https://7bridges.eu"}
-                            {:msg :source}]
-                           [{:msg :go :url "https://marco.dallastella.name"}
-                            {:msg :source}]])
+        out-chan (get-in context [:channels :results])]
+    (as/onto-chan in-chan [[{:msg :go :url "https://7bridges.eu"}]])
     (as/go-loop []
       (when-let [v (as/<! out-chan)]
         (println (apply str (take 150 v)))
