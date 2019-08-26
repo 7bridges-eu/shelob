@@ -104,45 +104,58 @@
 (defn- to-vector [x]
   (if (vector? x) x (vector x)))
 
+(defn- process-messages
+  ([messages]
+   (println "Drivers " (count @driver-pool))
+   (doseq [driver @driver-pool]
+     (process-messages driver messages)))
+  ([driver messages]
+   (doseq [message messages]
+     (println "Sending"
+              message
+              "from"
+              (.getId (Thread/currentThread))
+              "to"
+              (.hashCode driver))
+     (->> (assoc message :driver driver)
+          shb/browser-command))))
+
 (defn- driver-listener
   "Create a command executor listener. Messages should always be vectors."
   [ctx]
   (let [driver-options (:driver-options ctx)
         in-ch (get-in ctx [:channels :messages])
-        out-ch (get-in ctx [:channels :scraper])]
-    (as/thread
-      (loop [driver (init-driver driver-options)]
-        (when-let [messages (as/<!! in-ch)]
-          (doseq [message messages]
-            (println "Sending"
-                     message
-                     "from"
-                     (.getId (Thread/currentThread))
-                     "to"
-                     (.hashCode driver))
-            (->> (assoc message :driver driver)
-                 shb/browser-command))
+        out-ch (get-in ctx [:channels :scraper])
+        driver (init-driver driver-options)]
+    (as/go
+      (loop [driver driver]
+        (when-let [messages (as/<! in-ch)]
+          (process-messages driver messages)
           (->> (.getPageSource driver)
-               (as/>!! out-ch))
+               (as/>! out-ch))
           (recur driver))))))
 
 (defn init-executors [ctx]
-  (let [pool-size (:pool-size ctx 5)]
+  (let [pool-size (:pool-size ctx 5)
+        init-messages (:init-messages ctx)]
     (dotimes [_ pool-size]
-      (driver-listener ctx)))
+      (driver-listener ctx))
+    (when init-messages
+      (println "Init drivers" init-messages)
+      (process-messages init-messages)))
   ctx)
 
 (defn- scraper-listener [ctx]
   (let [in-ch (get-in ctx [:channels :scraper])
         out-ch (get-in ctx [:channels :results])
         scrape-fn (:scrape-fn ctx)]
-    (as/thread
+    (as/go
       (loop []
-        (when-let [source (as/<!! in-ch)]
+        (when-let [source (as/<! in-ch)]
           (->> source
                shs/parse
                scrape-fn
-               (as/>!! out-ch))
+               (as/>! out-ch))
           (recur))))))
 
 (defn init-scrapers [ctx]
@@ -158,17 +171,22 @@
       init-scrapers))
 
 (defn scrape-fn [document]
-  (shs/text (shs/select-first document "div.col-lg-6:nth-child(1) > div:nth-child(1) > p:nth-child(2)")))
+  (map shs/text (shs/select document ".result__url__domain")))
+
+(def ddg-scrape
+  {:driver-options {:browser :firefox}
+   :pool-size 2
+   :init-messages [{:msg :go :url "https://duckduckgo.com/"}
+                   {:msg :fill
+                    :locator (shb/by-css-selector "#search_form_input_homepage")
+                    :text "Clojure"}
+                   {:msg :click :locator (shb/by-css-selector "#search_button_homepage")}]
+   :scrape-fn scrape-fn})
 
 (defn example []
-  (let [context (init {:driver-options {:browser :firefox}
-                       :pool-size 2
-                       :scrape-fn scrape-fn})
+  (let [context (init ddg-scrape)
         in-chan (get-in context [:channels :messages])
         out-chan (get-in context [:channels :results])]
-    (as/onto-chan in-chan [[{:msg :go :url "https://7bridges.eu"}]])
-    (as/go-loop []
-      (when-let [v (as/<! out-chan)]
-        (println (apply str (take 150 v)))
-        (recur)))
+    (as/go (as/>! in-chan [{:msg :source}]))
+    (println (as/<!! (as/into [] out-chan)))
     context))
