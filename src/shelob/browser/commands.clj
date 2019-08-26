@@ -27,7 +27,7 @@
 (defmethod browser-command :go [{:keys [driver url]}]
   (.get driver url))
 
-(defn- :by [context query]
+(defn- by [context query]
   (case context
     :class-name (By/className query)
     :css-selector (By/cssSelector query)
@@ -38,47 +38,30 @@
     :tag-name (By/tagName query)
     :xpath (By/xpath query)))
 
-(defmethod browser-command :find-element [{:keys [starting-point locator]}]
-  (.findElement starting-point locator))
+(defmethod browser-command :find-element [{:keys [driver locator]}]
+  (.findElement driver locator))
 
-(defmethod browser-command :find-elements [{:keys [starting-point locator]}]
-  (.findElements starting-point locator))
+(defmethod browser-command :find-elements [{:keys [driver locator]}]
+  (.findElements driver locator))
 
-(defmethod browser-command :children [{:keys [starting-point]}]
-  (.findElements starting-point (By/xpath ".//*")))
+(defmethod browser-command :children [{:keys [driver locator]}]
+  (.findElements driver locator))
 
-(defmethod browser-command :children-by [{:keys [starting-point locator]}]
-  (.findElements starting-point locator))
-
-(defmethod browser-command :fill [{:keys [element text]}]
-  (->> [text]
-       into-array
-       (.sendKeys element)))
-
-(defmethod browser-command :fill-by [{:keys [starting-point locator text]}]
-  (let [element (.findElement starting-point locator)]
+(defmethod browser-command :fill [{:keys [driver locator text]}]
+  (let [element (.findElement driver locator)]
     (->> [text]
          into-array
          (.sendKeys element))))
 
-(defmethod browser-command :click [{:keys [element]}]
-  (.click element))
-
-(defmethod browser-command :click-by [{:keys [driver locator]}]
+(defmethod browser-command :click [{:keys [driver locator]}]
   (-> (.findElement driver locator)
       (.click)))
 
-(defmethod browser-command :attribute [{:keys [driver attribute-name]}]
-  (.getAttribute driver attribute-name))
-
-(defmethod browser-command :attribute-by [{:keys [driver locator attribute-name]}]
+(defmethod browser-command :attribute [{:keys [driver locator attribute-name]}]
   (-> (.findElement driver locator)
       (.getAttribute attribute-name)))
 
-(defmethod browser-command :text [{:keys [driver]}]
-  (.getText driver))
-
-(defmethod browser-command :text-by [{:keys [driver locator]}]
+(defmethod browser-command :text [{:keys [driver locator]}]
   (-> (.findElement driver locator)
       (.getText)))
 
