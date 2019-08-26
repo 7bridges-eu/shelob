@@ -13,6 +13,8 @@
 ;; limitations under the License.
 
 (ns shelob.browser.commands
+  (:require
+   [shelob.conditions :as conditions])
   (:import
    (org.openqa.selenium WebDriver By)
    (org.openqa.selenium.support.ui WebDriverWait)))
@@ -25,12 +27,7 @@
 (defmethod browser-command :go [{:keys [driver url]}]
   (.get driver url))
 
-(defmethod browser-command :wait-for [{:keys [driver condition timeout-seconds]
-                                       :or {timeout-seconds 2}}]
-  (let [wdw (WebDriverWait. driver timeout-seconds)]
-    (.until wdw condition)))
-
-(defmethod browser-command :by [{:keys [context query]}]
+(defn- :by [context query]
   (case context
     :class-name (By/className query)
     :css-selector (By/cssSelector query)
@@ -67,22 +64,22 @@
 (defmethod browser-command :click [{:keys [element]}]
   (.click element))
 
-(defmethod browser-command :click-by [{:keys [starting-point locator]}]
-  (-> (.findElement starting-point locator)
+(defmethod browser-command :click-by [{:keys [driver locator]}]
+  (-> (.findElement driver locator)
       (.click)))
 
-(defmethod browser-command :attribute [{:keys [element attribute-name]}]
-  (.getAttribute element attribute-name))
+(defmethod browser-command :attribute [{:keys [driver attribute-name]}]
+  (.getAttribute driver attribute-name))
 
-(defmethod browser-command :attribute-by [{:keys [starting-point locator attribute-name]}]
-  (-> (.findElement starting-point locator)
+(defmethod browser-command :attribute-by [{:keys [driver locator attribute-name]}]
+  (-> (.findElement driver locator)
       (.getAttribute attribute-name)))
 
-(defmethod browser-command :text [{:keys [element]}]
-  (.getText element))
+(defmethod browser-command :text [{:keys [driver]}]
+  (.getText driver))
 
-(defmethod browser-command :text-by [{:keys [starting-point locator]}]
-  (-> (.findElement starting-point locator)
+(defmethod browser-command :text-by [{:keys [driver locator]}]
+  (-> (.findElement driver locator)
       (.getText)))
 
 (defmethod browser-command :title [{:keys [driver]}]
