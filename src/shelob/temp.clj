@@ -122,8 +122,8 @@
             (->> (assoc message :driver driver)
                  shb/browser-command))
           (->> (.getPageSource driver)
-               (as/>!! scrapers-ch)))
-        (recur driver)))))
+               (as/>!! scrapers-ch))
+          (recur driver))))))
 
 (defn init-executors [ctx]
   (let [pool-size (:pool-size ctx 5)]
