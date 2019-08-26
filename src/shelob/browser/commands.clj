@@ -38,6 +38,11 @@
     :tag-name (By/tagName query)
     :xpath (By/xpath query)))
 
+(defmethod browser-command :wait-for [{:keys [driver condition timeout-seconds]
+                                       :or {timeout-seconds 2}}]
+  (let [wdw (WebDriverWait. driver timeout-seconds)]
+    (.until wdw condition)))
+
 (defmethod browser-command :find-element [{:keys [driver locator]}]
   (.findElement driver locator))
 
