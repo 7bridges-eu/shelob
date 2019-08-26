@@ -1,7 +1,50 @@
-(ns shelob.conditions
+;; Copyright 2019 7bridges s.r.l.
+;;
+;; Licensed under the Apache License, Version 2.0 (the "License");
+;; you may not use this file except in compliance with the License.
+;; You may obtain a copy of the License at
+;;
+;; http://www.apache.org/licenses/LICENSE-2.0
+;;
+;; Unless required by applicable law or agreed to in writing, software
+;; distributed under the License is distributed on an "AS IS" BASIS,
+;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;; See the License for the specific language governing permissions and
+;; limitations under the License.
+
+(ns shelob.browser
   (:import
-   [org.openqa.selenium By]
-   [org.openqa.selenium.support.ui ExpectedConditions]))
+   (org.openqa.selenium WebDriver By)
+   [org.openqa.selenium.support.ui ExpectedConditions]
+   (org.openqa.selenium.support.ui WebDriverWait)))
+
+;; Locators
+
+(defn by-class-name [class-name]
+  (By/className class-name))
+
+(defn by-css-selector [selector]
+  (By/cssSelector selector))
+
+(defn by-id [id]
+  (By/id id))
+
+(defn by-link-text [text]
+  (By/linkText text))
+
+(defn by-name [element-name]
+  (By/name element-name))
+
+(defn by-partial-link-text [text]
+  (By/partialLinkText text))
+
+(defn by-tag-name [tag-name]
+  (By/tagName tag-name))
+
+(defn by-xpath [xpath]
+  (By/xpath xpath))
+
+;; Conditions
 
 (defn attribute-contains
   [^By locator ^String attribute ^String value]
@@ -90,3 +133,51 @@
 (defn visibility-of-nested-elements-located-by
   [^By locator ^By child-locator]
   (ExpectedConditions/visibilityOfNestedElementsLocatedBy locator child-locator))
+
+;; Messages
+
+(defmulti browser-command :msg)
+
+(defmethod browser-command :clean-cookies [{:keys [driver]}]
+  (.. driver manage deleteAllCookies))
+
+(defmethod browser-command :go [{:keys [driver url]}]
+  (.get driver url))
+
+(defmethod browser-command :wait-for [{:keys [driver condition timeout-seconds]
+                                       :or {timeout-seconds 2}}]
+  (let [wdw (WebDriverWait. driver timeout-seconds)]
+    (.until wdw condition)))
+
+(defmethod browser-command :find-element [{:keys [driver locator]}]
+  (.findElement driver locator))
+
+(defmethod browser-command :find-elements [{:keys [driver locator]}]
+  (.findElements driver locator))
+
+(defmethod browser-command :children [{:keys [driver locator]}]
+  (.findElements driver locator))
+
+(defmethod browser-command :fill [{:keys [driver locator text]}]
+  (let [element (.findElement driver locator)]
+    (->> [text]
+         into-array
+         (.sendKeys element))))
+
+(defmethod browser-command :click [{:keys [driver locator]}]
+  (-> (.findElement driver locator)
+      (.click)))
+
+(defmethod browser-command :attribute [{:keys [driver locator attribute-name]}]
+  (-> (.findElement driver locator)
+      (.getAttribute attribute-name)))
+
+(defmethod browser-command :text [{:keys [driver locator]}]
+  (-> (.findElement driver locator)
+      (.getText)))
+
+(defmethod browser-command :title [{:keys [driver]}]
+  (.getTitle driver))
+
+(defmethod browser-command :source [{:keys [driver]}]
+  (.getPageSource driver))

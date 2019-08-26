@@ -1,7 +1,7 @@
 (ns shelob.temp
   (:require
    [clojure.core.async :as as]
-   [shelob.browser.commands :as shc])
+   [shelob.browser :as shb])
   (:import
    [org.openqa.selenium.chrome ChromeDriver ChromeOptions]
    [org.openqa.selenium.edge EdgeDriver]
@@ -135,7 +135,7 @@
           (doseq [message messages]
             (println "Sending" message)
             (->> (assoc message :driver driver)
-                 shc/browser-command
+                 shb/browser-command
                  (as/>! scrapers-ch)))
           (release-driver driver-pool driver-id)
           (recur))))))
