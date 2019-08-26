@@ -11,28 +11,14 @@
    [org.openqa.selenium.safari SafariDriver]
    [org.openqa.selenium Proxy]))
 
-(def driver-pool (atom {}))
+(def driver-pool (atom []))
 
 (defn- close-driver-pool
   [pool]
-  (doseq [[k driver] pool]
-    (println "Closing " k)
-    (.quit (:instance driver)))
-  (reset! driver-pool {}))
-
-(defn- available-driver
-  [pool]
-  (->> pool
-       (filter (fn [[_ v]] (:available v)))
-       first))
-
-(defn take-driver [pool]
-  (let [[driver-id driver] (available-driver @pool)]
-    (swap! pool update-in [driver-id :available] not)
-    [driver-id (:instance driver)]))
-
-(defn release-driver [pool driver-id]
-  (swap! pool update-in [driver-id :available] not))
+  (doseq [driver pool]
+    (println "Closing " (.hashCode driver))
+    (.close driver))
+  (reset! driver-pool []))
 
 (defn- init-channels [ctx]
   (assoc ctx :channels {:messages (as/chan)
@@ -109,17 +95,10 @@
 
 (defn init-driver [options]
   (let [opts (driver-options options)
-        browser (:browser options)]
-    (web-driver browser opts)))
-
-(defn init-driver-pool [ctx]
-  (let [pool-size (:pool-size ctx 5)]
-    (dotimes [_ pool-size]
-      (let [options (:driver-options ctx)
-            driver (init-driver options)]
-        (swap! driver-pool assoc (.hashCode driver) {:instance driver
-                                                     :available true})))
-    ctx))
+        browser (:browser options)
+        driver (web-driver browser opts)]
+    (swap! driver-pool conj driver)
+    driver))
 
 (defn- to-vector [x]
   (if (vector? x) x (vector x)))
@@ -127,28 +106,39 @@
 (defn- exec-listener
   "Create a command executor listener. Messages should always be vectors."
   [ctx]
-  (let [in-ch (get-in ctx [:channels :messages])
+  (let [driver-options (:driver-options ctx)
+        in-ch (get-in ctx [:channels :messages])
         scrapers-ch (get-in ctx [:channels :scraper])]
-    (as/go-loop []
-      (when-let [messages (as/<! in-ch)]
-        (let [[driver-id driver] (take-driver driver-pool)]
+    (as/thread
+      (loop [driver (init-driver driver-options)]
+        (when-let [messages (as/<!! in-ch)]
           (doseq [message messages]
-            (println "Sending" message)
+            (println "Sending"
+                     message
+                     "from"
+                     (.getId (Thread/currentThread))
+                     "to"
+                     (.hashCode driver))
             (->> (assoc message :driver driver)
-                 shb/browser-command
-                 (as/>! scrapers-ch)))
-          (release-driver driver-pool driver-id)
-          (recur))))))
+                 shb/browser-command))
+          (->> (.getPageSource driver)
+               (as/>!! scrapers-ch)))
+        (recur driver)))))
 
 (defn init-executors [ctx]
-  (exec-listener ctx)
+  (let [pool-size (:pool-size ctx 5)]
+    (dotimes [_ pool-size]
+      (exec-listener ctx)))
+  ctx)
+
+(defn init-scrapers [ctx]
   ctx)
 
 (defn init [ctx]
   (-> ctx
-      init-driver-pool
       init-channels
-      init-executors))
+      init-executors
+      init-scrapers))
 
 (defn example []
   (let [context (init {:driver-options {:browser :firefox}
@@ -156,8 +146,11 @@
         in-chan (get-in context [:channels :messages])
         out-chan (get-in context [:channels :scraper])]
     (as/onto-chan in-chan [[{:msg :go :url "https://7bridges.eu"}
+                            {:msg :source}]
+                           [{:msg :go :url "https://marco.dallastella.name"}
                             {:msg :source}]])
     (as/go-loop []
       (when-let [v (as/<! out-chan)]
-        (println v)
-        (recur)))))
+        (println (apply str (take 150 v)))
+        (recur)))
+    context))
