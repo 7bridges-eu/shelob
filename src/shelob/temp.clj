@@ -2,7 +2,8 @@
   (:require
    [clojure.core.async :as as]
    [shelob.browser :as shb]
-   [shelob.scraper :as shs])
+   [shelob.scraper :as shs]
+   [taoensso.timbre :as timbre])
   (:import
    [org.openqa.selenium.chrome ChromeDriver ChromeOptions]
    [org.openqa.selenium.edge EdgeDriver]
@@ -17,14 +18,13 @@
 (defn- close-driver-pool
   [pool]
   (doseq [driver pool]
-    (println "Closing " (.hashCode driver))
+    (timbre/debug "Closing " (.hashCode driver))
     (.close driver))
   (reset! driver-pool []))
 
 (defn- init-channels [ctx]
   (assoc ctx :channels {:messages (as/chan)
-                        :scraper (as/chan)
-                        :results (as/chan)}))
+                        :scraper (as/chan)}))
 
 (defn- close-channels [ctx]
   (let [channels (:channels ctx)]
@@ -106,17 +106,10 @@
 
 (defn- process-messages
   ([messages]
-   (println "Drivers " (count @driver-pool))
    (doseq [driver @driver-pool]
      (process-messages driver messages)))
   ([driver messages]
    (doseq [message messages]
-     (println "Sending"
-              message
-              "from"
-              (.getId (Thread/currentThread))
-              "to"
-              (.hashCode driver))
      (->> (assoc message :driver driver)
           shb/validate
           shb/browser-command))))
@@ -128,48 +121,53 @@
         in-ch (get-in ctx [:channels :messages])
         out-ch (get-in ctx [:channels :scraper])
         driver (init-driver driver-options)]
-    (as/go
+    (as/thread
       (loop [driver driver]
-        (when-let [messages (as/<! in-ch)]
+        (when-let [messages (as/<!! in-ch)]
           (process-messages driver messages)
           (->> (.getPageSource driver)
-               (as/>! out-ch))
+               (as/>!! out-ch))
           (recur driver))))))
 
 (defn init-executors [ctx]
+  (timbre/debug "Initialize executors...")
   (let [pool-size (:pool-size ctx 5)
         init-messages (:init-messages ctx)]
     (dotimes [_ pool-size]
       (driver-listener ctx))
     (when init-messages
-      (println "Init drivers" init-messages)
       (process-messages init-messages)))
   ctx)
 
 (defn- scraper-listener [ctx]
   (let [in-ch (get-in ctx [:channels :scraper])
-        out-ch (get-in ctx [:channels :results])
         scrape-fn (:scrape-fn ctx)]
-    (as/go
-      (loop []
-        (when-let [source (as/<! in-ch)]
-          (->> source
-               shs/parse
-               scrape-fn
-               (as/>! out-ch))
-          (recur))))))
+    (timbre/debug "Context " ctx)
+    (as/thread
+      (when-let [source (as/<!! in-ch)]
+        (->> source
+             shs/parse
+             scrape-fn)))))
 
-(defn init-scrapers [ctx]
-  (let [pool-size (:pool-size ctx 5)]
-    (dotimes [_ pool-size]
-      (scraper-listener ctx)))
-  ctx)
+(defn init-scrapers
+  "Starts `n` scraper threads with `ctx` and returns a merged channel."
+  [ctx n]
+  (timbre/debug "Initialize scrapers...")
+  (->> n
+       range
+       (mapv (scraper-listener ctx))
+       as/merge))
 
 (defn init [ctx]
   (-> ctx
       init-channels
-      init-executors
-      init-scrapers))
+      init-executors))
+
+(defn send-messages [ctx messages]
+  (let [msg-ch (get-in ctx [:channels :messages])
+        result-ch (init-scrapers ctx (count messages))]
+    (as/onto-chan msg-ch messages)
+    (as/<!! (as/into [] result-ch))))
 
 (defn scrape-fn [document]
   (map shs/text (shs/select document ".result__url__domain")))
@@ -185,9 +183,8 @@
    :scrape-fn scrape-fn})
 
 (defn example []
-  (let [context (init ddg-scrape)
-        in-chan (get-in context [:channels :messages])
-        out-chan (get-in context [:channels :results])]
-    (as/go (as/>! in-chan [{:msg :source}]))
-    (println (as/<!! (as/into [] out-chan)))
+  (let [context (init ddg-scrape)]
+    (->> [[{:msg :source}]]
+         (send-messages context)
+         println)
     context))
