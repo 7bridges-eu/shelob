@@ -194,7 +194,7 @@
 
 (defn- condition?
   [x]
-  (instance? org.openqa.selenium.support.ui.ExpectedConditions x))
+  (instance? java.lang.Object x))
 
 (defn- locator?
   [x]
