@@ -15,7 +15,7 @@
 
 (def driver-pool (atom []))
 
-(defn- close-driver-pool
+(defn close-driver-pool
   [pool]
   (doseq [driver pool]
     (timbre/debug "Closing " (.hashCode driver))
@@ -91,7 +91,7 @@
     (swap! driver-pool conj driver)
     driver))
 
-(defn init-driver-pool [{:keys [driver-options pool-size]}]
+(defn init-driver-pool [{:keys [driver-options pool-size] :or {pool-size 5}}]
   (->> (repeatedly pool-size #(init-driver driver-options))
        (reset! driver-pool)))
 
