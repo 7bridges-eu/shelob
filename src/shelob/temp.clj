@@ -22,23 +22,13 @@
     (.close driver))
   (reset! driver-pool []))
 
-(defn- init-channels [ctx]
-  (assoc ctx :channels {:messages (as/chan)
-                        :scraper (as/chan)}))
-
-(defn- close-channels [ctx]
-  (let [channels (:channels ctx)]
-    (doseq [channel (vals channels)]
-      (as/close! channel)))
-  (dissoc ctx :channels))
-
 (defn- ->proxy [http ssl]
   (-> (Proxy.)
       (.setHttpProxy http)
       (.setSslProxy ssl)))
 
-(defmulti driver-options :browser)
-(defmethod driver-options :firefox [options]
+(defmulti ->driver-options :browser)
+(defmethod ->driver-options :firefox [options]
   (let [default-options (-> (FirefoxOptions.)
                             (.setHeadless true))]
     (if-let [proxy (:proxy options)]
@@ -46,10 +36,10 @@
            (.setProxy default-options))
       default-options)))
 
-(defmethod driver-options :chrome [options]
+(defmethod ->driver-options :chrome [options]
   (throw (ex-info "Chrome not implemented yet!" {})))
 
-(defmethod driver-options :edge [options]
+(defmethod ->driver-options :edge [options]
   (throw (ex-info "Edge not implemented yet!" {})))
 
 (defn chrome-driver
@@ -95,11 +85,15 @@
     (firefox-driver options)))
 
 (defn init-driver [options]
-  (let [opts (driver-options options)
+  (let [opts (->driver-options options)
         browser (:browser options)
         driver (web-driver browser opts)]
     (swap! driver-pool conj driver)
     driver))
+
+(defn init-driver-pool [{:keys [driver-options pool-size]}]
+  (->> (repeatedly pool-size #(init-driver driver-options))
+       (reset! driver-pool)))
 
 (defn- to-vector [x]
   (if (vector? x) x (vector x)))
@@ -116,56 +110,50 @@
 
 (defn- driver-listener
   "Create a command executor listener. Messages should always be vectors."
-  [ctx]
-  (let [driver-options (:driver-options ctx)
-        in-ch (get-in ctx [:channels :messages])
-        out-ch (get-in ctx [:channels :scraper])
-        driver (init-driver driver-options)]
-    (as/thread
-      (loop [driver driver]
-        (when-let [messages (as/<!! in-ch)]
-          (process-messages driver messages)
-          (->> (.getPageSource driver)
-               (as/>!! out-ch))
-          (recur driver))))))
+  [driver in-ch]
+  (as/thread
+    (when-let [messages (as/<!! in-ch)]
+      (process-messages driver messages)
+      (.getPageSource driver))))
 
-(defn init-executors [ctx]
-  (timbre/debug "Initialize executors...")
-  (let [pool-size (:pool-size ctx 5)
-        init-messages (:init-messages ctx)]
-    (dotimes [_ pool-size]
-      (driver-listener ctx))
-    (when init-messages
-      (process-messages init-messages)))
-  ctx)
-
-(defn- scraper-listener [ctx]
-  (let [in-ch (get-in ctx [:channels :scraper])
-        scrape-fn (:scrape-fn ctx)]
+(defn- scraper-listener [ctx in-ch]
+  (let [scrape-fn (:scrape-fn ctx)]
     (as/thread
       (when-let [source (as/<!! in-ch)]
         (->> source
              shs/parse
              scrape-fn)))))
 
+(defn init-executors
+  "Starts a thread for each instanced driver and returns a merged channel."
+  [in-ch]
+  (timbre/debug "Initialize executors...")
+  (->> @driver-pool
+       (reduce (fn [acc driver] (conj acc (driver-listener driver in-ch))) [])
+       as/merge))
+
 (defn init-scrapers
   "Starts `n` scraper threads with `ctx` and returns a merged channel."
-  [ctx n]
+  [ctx n in-ch]
   (timbre/debug "Initialize scrapers...")
   (-> n
-      (repeatedly #(scraper-listener ctx))
+      (repeatedly #(scraper-listener ctx in-ch))
       as/merge))
 
 (defn init [ctx]
-  (-> ctx
-      init-channels
-      init-executors))
+  (let [init-messages (:init-messages ctx)]
+    (init-driver-pool ctx)
+    (when init-messages
+      (process-messages init-messages))))
 
 (defn send-messages [ctx messages]
-  (let [msg-ch (get-in ctx [:channels :messages])
-        result-ch (init-scrapers ctx (count messages))]
+  (let [msg-ch (as/chan)
+        scraper-ch (init-executors msg-ch)
+        result-ch (init-scrapers ctx (count messages) scraper-ch)]
     (as/onto-chan msg-ch messages)
-    (as/<!! (as/reduce into [] result-ch))))
+    (let [results (as/<!! (as/reduce into [] result-ch))]
+      (as/close! msg-ch)
+      results)))
 
 (defn scrape-fn [document]
   (map shs/text (shs/select document ".result__url__domain")))
@@ -180,12 +168,10 @@
                    {:msg :click :locator (shb/by-css-selector "#search_button_homepage")}]
    :scrape-fn scrape-fn})
 
-(defn example []
-  (let [context (init ddg-scrape)]
-    (->> [[{:msg :source}]
-          [{:msg :source}]
-          [{:msg :source}]
-          [{:msg :source}]]
-         (send-messages context)
-         println)
-    context))
+(defn example [context]
+  (init context)
+  (->> [[{:msg :source}]
+        [{:msg :source}]
+        [{:msg :source}]
+        [{:msg :source}]]
+       (send-messages context)))
