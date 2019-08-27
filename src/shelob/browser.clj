@@ -217,7 +217,8 @@
   (sp/keys :req-un [::driver ::url]))
 
 (defmethod msg-type :wait-for [_]
-  (sp/keys :req-un [::driver ::condition ::timeout-seconds]))
+  (sp/keys :req-un [::driver ::condition]
+           :opt-un [::timeout-seconds]))
 
 (defmethod msg-type :find-element [_]
   (sp/keys :req-un [::driver ::locator]))
