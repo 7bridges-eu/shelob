@@ -13,9 +13,13 @@
 ;; limitations under the License.
 
 (ns shelob.browser
+  (:require
+   [clojure.spec.alpha :as sp]
+   [expound.alpha :as e])
   (:import
    (org.openqa.selenium WebDriver By)
-   [org.openqa.selenium.support.ui ExpectedConditions]
+   (org.openqa.selenium.remote RemoteWebDriver)
+   (org.openqa.selenium.support.ui ExpectedConditions)
    (org.openqa.selenium.support.ui WebDriverWait)))
 
 ;; Locators
@@ -181,3 +185,74 @@
 
 (defmethod browser-command :source [{:keys [driver]}]
   (.getPageSource driver))
+
+;; Specs
+
+(defn- web-driver?
+  [x]
+  (isa? (type x) org.openqa.selenium.remote.RemoteWebDriver))
+
+(defn- condition?
+  [x]
+  (instance? org.openqa.selenium.support.ui.ExpectedConditions x))
+
+(defn- locator?
+  [x]
+  (instance? org.openqa.selenium.By x))
+
+(sp/def ::driver web-driver?)
+(sp/def ::url string?)
+(sp/def ::condition condition?)
+(sp/def ::timeout-seconds number?)
+(sp/def ::locator locator?)
+(sp/def ::text string?)
+(sp/def ::attribute-name string?)
+
+(defmulti msg-type :msg)
+
+(defmethod msg-type :clean-cookies [_]
+  (sp/keys :req-un [::driver]))
+
+(defmethod msg-type :go [_]
+  (sp/keys :req-un [::driver ::url]))
+
+(defmethod msg-type :wait-for [_]
+  (sp/keys :req-un [::driver ::condition ::timeout-seconds]))
+
+(defmethod msg-type :find-element [_]
+  (sp/keys :req-un [::driver ::locator]))
+
+(defmethod msg-type :find-elements [_]
+  (sp/keys :req-un [::driver ::locator]))
+
+(defmethod msg-type :children [_]
+  (sp/keys :req-un [::driver ::locator]))
+
+(defmethod msg-type :fill [_]
+  (sp/keys :req-un [::driver ::locator ::text]))
+
+(defmethod msg-type :click [_]
+  (sp/keys :req-un [::driver ::locator]))
+
+(defmethod msg-type :attribute [_]
+  (sp/keys :req-un [::driver ::locator ::attribute-name]))
+
+(defmethod msg-type :text [_]
+  (sp/keys :req-un [::driver ::locator]))
+
+(defmethod msg-type :title [_]
+  (sp/keys :req-un [::driver]))
+
+(defmethod msg-type :source [_]
+  (sp/keys :req-un [::driver]))
+
+(sp/def ::msg (sp/multi-spec msg-type :msg))
+
+(defn validate
+  "Check if `input` conforms to `::msg`.
+  If it conforms, return it. Otherwise, throw an exception."
+  [input]
+  (let [i (sp/conform ::msg input)]
+    (if (= i ::sp/invalid)
+      (throw (ex-info "Invalid input" (e/expound ::msg input)))
+      i)))

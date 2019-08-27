@@ -118,6 +118,7 @@
               "to"
               (.hashCode driver))
      (->> (assoc message :driver driver)
+          shb/validate
           shb/browser-command))))
 
 (defn- driver-listener
