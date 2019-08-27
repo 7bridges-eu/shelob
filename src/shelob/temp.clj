@@ -142,7 +142,6 @@
 (defn- scraper-listener [ctx]
   (let [in-ch (get-in ctx [:channels :scraper])
         scrape-fn (:scrape-fn ctx)]
-    (timbre/debug "Context " ctx)
     (as/thread
       (when-let [source (as/<!! in-ch)]
         (->> source
@@ -153,10 +152,9 @@
   "Starts `n` scraper threads with `ctx` and returns a merged channel."
   [ctx n]
   (timbre/debug "Initialize scrapers...")
-  (->> n
-       range
-       (mapv (scraper-listener ctx))
-       as/merge))
+  (-> n
+      (repeatedly #(scraper-listener ctx))
+      as/merge))
 
 (defn init [ctx]
   (-> ctx
@@ -167,7 +165,7 @@
   (let [msg-ch (get-in ctx [:channels :messages])
         result-ch (init-scrapers ctx (count messages))]
     (as/onto-chan msg-ch messages)
-    (as/<!! (as/into [] result-ch))))
+    (as/<!! (as/reduce into [] result-ch))))
 
 (defn scrape-fn [document]
   (map shs/text (shs/select document ".result__url__domain")))
@@ -184,7 +182,10 @@
 
 (defn example []
   (let [context (init ddg-scrape)]
-    (->> [[{:msg :source}]]
+    (->> [[{:msg :source}]
+          [{:msg :source}]
+          [{:msg :source}]
+          [{:msg :source}]]
          (send-messages context)
          println)
     context))
