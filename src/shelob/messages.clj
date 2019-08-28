@@ -43,13 +43,12 @@
         (recur)))))
 
 (defn- scraper-listener
-  [ctx in-ch]
-  (let [scrape-fn (:scrape-fn ctx)]
-    (as/thread
-      (when-let [source (as/<!! in-ch)]
-        (->> source
-             shs/parse
-             scrape-fn)))))
+  [in-ch scrape-fn]
+  (as/thread
+    (when-let [source (as/<!! in-ch)]
+      (->> source
+           shs/parse
+           scrape-fn))))
 
 (defn init-executors
   "Starts a thread for each instanced driver and returns a merged channel."
@@ -61,17 +60,17 @@
 
 (defn init-scrapers
   "Starts `n` scraper threads with `ctx` and returns a merged channel."
-  [ctx n in-ch]
+  [n in-ch scrape-fn]
   (timbre/debug "Initialize scrapers...")
   (-> n
-      (repeatedly #(scraper-listener ctx in-ch))
+      (repeatedly #(scraper-listener in-ch scrape-fn))
       as/merge))
 
 (defn send-batch-messages
-  [ctx messages]
+  [ctx messages scrape-fn]
   (let [msg-ch (as/chan (:pool-size ctx 5))
         scraper-ch (as/chan)
-        result-ch (init-scrapers ctx (count messages) scraper-ch)]
+        result-ch (init-scrapers (count messages) scraper-ch scrape-fn)]
     (init-executors msg-ch scraper-ch)
     (as/onto-chan msg-ch messages)
     (let [results (as/<!! (as/reduce into [] result-ch))]

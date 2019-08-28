@@ -35,17 +35,17 @@
 
 (defn send-message
   "Sends a single `message` to the executors."
-  [ctx message]
-  (shm/send-batch-messages ctx [message]))
+  [ctx scrape-fn message]
+  (shm/send-batch-messages ctx [message] scrape-fn))
 
 (defn send-messages
   "Sends a collection of `messages` to the executors."
-  [ctx messages]
+  [ctx scrape-fn messages]
   (->> messages
        (partition-all 500)
        (reduce
         (fn [results messages-batch]
-          (into results (shm/send-batch-messages ctx messages-batch)))
+          (into results (shm/send-batch-messages ctx messages-batch scrape-fn)))
         [])))
 
 (defn stop
