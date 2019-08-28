@@ -110,11 +110,14 @@
 
 (defn- driver-listener
   "Create a command executor listener. Messages should always be vectors."
-  [driver in-ch]
+  [driver in-ch out-ch]
   (as/thread
-    (when-let [messages (as/<!! in-ch)]
-      (process-messages driver messages)
-      (.getPageSource driver))))
+    (loop []
+      (when-let [messages (as/<!! in-ch)]
+        (process-messages driver messages)
+        (->> (.getPageSource driver)
+             (as/>!! out-ch))
+        (recur)))))
 
 (defn- scraper-listener [ctx in-ch]
   (let [scrape-fn (:scrape-fn ctx)]
@@ -126,10 +129,10 @@
 
 (defn init-executors
   "Starts a thread for each instanced driver and returns a merged channel."
-  [in-ch]
+  [in-ch out-ch]
   (timbre/debug "Initialize executors...")
   (->> @driver-pool
-       (reduce (fn [acc driver] (conj acc (driver-listener driver in-ch))) [])
+       (reduce (fn [acc driver] (conj acc (driver-listener driver in-ch out-ch))) [])
        as/merge))
 
 (defn init-scrapers
@@ -146,14 +149,25 @@
     (when init-messages
       (process-messages init-messages))))
 
-(defn send-messages [ctx messages]
-  (let [msg-ch (as/chan)
-        scraper-ch (init-executors msg-ch)
+(defn- send-batch-messages [ctx messages]
+  (timbre/debug "Messages " (count messages))
+  (let [msg-ch (as/chan (:pool-size ctx 5))
+        scraper-ch (as/chan)
         result-ch (init-scrapers ctx (count messages) scraper-ch)]
+    (init-executors msg-ch scraper-ch)
     (as/onto-chan msg-ch messages)
     (let [results (as/<!! (as/reduce into [] result-ch))]
       (as/close! msg-ch)
+      (as/close! scraper-ch)
       results)))
+
+(defn send-messages [ctx messages]
+  (->> messages
+       (partition-all 500)
+       (reduce
+        (fn [results messages-batch]
+          (into results (send-batch-messages ctx messages-batch)))
+        [])))
 
 (defn scrape-fn [document]
   (map shs/text (shs/select document ".result__url__domain")))
