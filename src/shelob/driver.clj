@@ -35,18 +35,21 @@
       default-options)))
 
 (defmethod ->driver-options :chrome [options]
-  (throw (ex-info "Chrome not implemented yet!" {})))
+  (System/setProperty "webdriver.chrome.silentLogging" "true")
+  (System/setProperty "webdriver.chrome.silentOutput" "true")
+  (let [default-options (-> (ChromeOptions.)
+                            (.setHeadless true))]
+    (if-let [proxy (:proxy options)]
+      (->> (->proxy proxy proxy)
+           (.setProxy default-options))
+      default-options)))
 
 (defmethod ->driver-options :edge [options]
   (throw (ex-info "Edge not implemented yet!" {})))
 
 (defn chrome-driver
   [options]
-  (System/setProperty "webdriver.chrome.silentLogging" "true")
-  (System/setProperty "webdriver.chrome.silentOutput" "true")
-  (-> options
-      (.setHeadless true)
-      (ChromeDriver.)))
+  (ChromeDriver. options))
 
 (defn edge-driver
   [options]
@@ -54,10 +57,7 @@
 
 (defn firefox-driver
   [options]
-  (System/setProperty FirefoxDriver$SystemProperty/BROWSER_LOGFILE "/dev/null")
-  (-> options
-      (.setHeadless true)
-      (FirefoxDriver.)))
+  (FirefoxDriver. options))
 
 (defn internet-explorer-driver
   [options]
