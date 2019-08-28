@@ -19,7 +19,8 @@
     (.close driver))
   (reset! driver-pool []))
 
-(defn- ->proxy [http ssl]
+(defn- ->proxy
+  [http ssl]
   (-> (Proxy.)
       (.setHttpProxy http)
       (.setSslProxy ssl)))
@@ -82,13 +83,15 @@
     :safari (safari-driver options)
     (firefox-driver options)))
 
-(defn init-driver [options]
+(defn init-driver
+  [options]
   (let [opts (->driver-options options)
         browser (:browser options)
         driver (web-driver browser opts)]
     (swap! driver-pool conj driver)
     driver))
 
-(defn init-driver-pool [{:keys [driver-options pool-size] :or {pool-size 5}}]
+(defn init-driver-pool
+  [{:keys [driver-options pool-size] :or {pool-size 5}}]
   (->> (repeatedly pool-size #(init-driver driver-options))
        (reset! driver-pool)))

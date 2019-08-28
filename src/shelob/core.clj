@@ -19,12 +19,14 @@
    [taoensso.timbre :as timbre]
    [taoensso.timbre.appenders.core :as appenders]))
 
-(defn init-log [ctx]
+(defn init-log
+  [ctx]
   (timbre/merge-config!
    {:appenders {:spit (appenders/spit-appender {:fname (:log-file ctx "shelob.log")})}
     :level (:log-level ctx :info)}))
 
-(defn init [ctx]
+(defn init
+  [ctx]
   (let [init-messages (:init-messages ctx)]
     (init-log ctx)
     (shd/init-driver-pool ctx)
@@ -46,9 +48,11 @@
           (into results (shm/send-batch-messages ctx messages-batch)))
         [])))
 
-(defn stop []
+(defn stop
+  []
   (shd/close-driver-pool @shd/driver-pool))
 
-(defn reset [ctx]
+(defn reset
+  [ctx]
   (stop)
   (shd/init-driver-pool ctx))

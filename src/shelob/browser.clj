@@ -24,28 +24,36 @@
 
 ;; Locators
 
-(defn by-class-name [class-name]
+(defn by-class-name
+  [class-name]
   (By/className class-name))
 
-(defn by-css-selector [selector]
+(defn by-css-selector
+  [selector]
   (By/cssSelector selector))
 
-(defn by-id [id]
+(defn by-id
+  [id]
   (By/id id))
 
-(defn by-link-text [text]
+(defn by-link-text
+  [text]
   (By/linkText text))
 
-(defn by-name [element-name]
+(defn by-name
+  [element-name]
   (By/name element-name))
 
-(defn by-partial-link-text [text]
+(defn by-partial-link-text
+  [text]
   (By/partialLinkText text))
 
-(defn by-tag-name [tag-name]
+(defn by-tag-name
+  [tag-name]
   (By/tagName tag-name))
 
-(defn by-xpath [xpath]
+(defn by-xpath
+  [xpath]
   (By/xpath xpath))
 
 ;; Conditions

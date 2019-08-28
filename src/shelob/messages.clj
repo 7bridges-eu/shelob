@@ -42,7 +42,8 @@
              (as/>!! out-ch))
         (recur)))))
 
-(defn- scraper-listener [ctx in-ch]
+(defn- scraper-listener
+  [ctx in-ch]
   (let [scrape-fn (:scrape-fn ctx)]
     (as/thread
       (when-let [source (as/<!! in-ch)]
@@ -66,7 +67,8 @@
       (repeatedly #(scraper-listener ctx in-ch))
       as/merge))
 
-(defn send-batch-messages [ctx messages]
+(defn send-batch-messages
+  [ctx messages]
   (let [msg-ch (as/chan (:pool-size ctx 5))
         scraper-ch (as/chan)
         result-ch (init-scrapers ctx (count messages) scraper-ch)]
