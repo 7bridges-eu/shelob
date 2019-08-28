@@ -14,101 +14,36 @@
 
 (ns shelob.core
   (:require
-   [clojure.core.async :as as]
-   [clojure.string :as s]
+   [shelob.driver :as shd]
+   [shelob.messages :as shm]
    [taoensso.timbre :as timbre]
-   [taoensso.timbre.appenders.core :as appenders])
-  (:import
-   [org.openqa.selenium.chrome ChromeDriver ChromeOptions]
-   [org.openqa.selenium.edge EdgeDriver]
-   [org.openqa.selenium.ie InternetExplorerDriver]
-   [org.openqa.selenium.firefox FirefoxDriver FirefoxDriver$SystemProperty FirefoxOptions]
-   [org.openqa.selenium.opera OperaDriver]
-   [org.openqa.selenium.safari SafariDriver]))
+   [taoensso.timbre.appenders.core :as appenders]))
 
-(def ^:const pool-size 10)
+(defn init-log [ctx]
+  (timbre/merge-config!
+   {:appenders {:spit (appenders/spit-appender {:fname (:log-file ctx "shelob.log")})}}))
 
-(timbre/merge-config!
- {:appenders {:spit (appenders/spit-appender {:fname "shelob.log"})}})
+(defn init [ctx]
+  (let [init-messages (:init-messages ctx)]
+    (init-log ctx)
+    (shd/init-driver-pool ctx)
+    (when init-messages
+      (shm/process-messages init-messages))))
 
-(defn chrome-driver
-  []
-  (System/setProperty "webdriver.chrome.silentLogging" "true")
-  (System/setProperty "webdriver.chrome.silentOutput" "true")
-  (-> (ChromeOptions.)
-      (.setHeadless true)
-      (ChromeDriver.)))
+(defn send-message
+  "Sends a single `message` to the executors."
+  [ctx message]
+  (shm/send-batch-messages ctx [message]))
 
-(defn edge-driver
-  []
-  (EdgeDriver.))
+(defn send-messages
+  "Sends a collection of `messages` to the executors."
+  [ctx messages]
+  (->> messages
+       (partition-all 500)
+       (reduce
+        (fn [results messages-batch]
+          (into results (shm/send-batch-messages ctx messages-batch)))
+        [])))
 
-(defn firefox-driver
-  []
-  (System/setProperty FirefoxDriver$SystemProperty/BROWSER_LOGFILE "/dev/null")
-  (-> (FirefoxOptions.)
-      (.setHeadless true)
-      (FirefoxDriver.)))
-
-(defn internet-explorer-driver
-  []
-  (InternetExplorerDriver.))
-
-(defn opera-driver
-  []
-  (OperaDriver.))
-
-(defn safari-driver
-  []
-  (SafariDriver.))
-
-(defn web-driver
-  [browser]
-  (case browser
-    :chrome (chrome-driver)
-    :edge (edge-driver)
-    :firefox (firefox-driver)
-    :internet-explorer (internet-explorer-driver)
-    :opera (opera-driver)
-    :safari (safari-driver)
-    (firefox-driver)))
-
-(defn- init-webdriver
-  ([browser]
-   (web-driver browser))
-  ([browser init-fn]
-   (init-fn (web-driver browser))))
-
-(defn- scrape-data
-  [source]
-  (s/split source #" "))
-
-(defn- webdriver-pool
-  [init-fn pool-size]
-  (reduce (fn [acc _]
-            (conj acc (init-webdriver :firefox init-fn)))
-          []
-          (range pool-size)))
-
-(defn- close-pool
-  [pool result]
-  (doseq [driver pool]
-    (.close driver))
-  result)
-
-(defn navigate-and-scrape-xf
-  [navigate-fn scrape-fn]
-  (comp (map #(apply navigate-fn %))
-        (mapcat scrape-fn)))
-
-(defn navigate-and-scrape
-  [init-fn navigate-fn scrape-fn urls]
-  (let [pool (webdriver-pool init-fn pool-size)]
-    (try
-      (let [in-ch (as/chan pool-size (navigate-and-scrape-xf navigate-fn scrape-fn))
-            data (map vector (cycle pool) urls)]
-        (as/go (as/onto-chan in-ch data))
-        (close-pool pool (as/<!! (as/into [] in-ch))))
-      (catch Exception e
-        (close-pool pool e)
-        (throw e)))))
+(defn stop []
+  (shd/close-driver-pool @shd/driver-pool))
