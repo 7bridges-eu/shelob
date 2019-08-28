@@ -21,7 +21,8 @@
 
 (defn init-log [ctx]
   (timbre/merge-config!
-   {:appenders {:spit (appenders/spit-appender {:fname (:log-file ctx "shelob.log")})}}))
+   {:appenders {:spit (appenders/spit-appender {:fname (:log-file ctx "shelob.log")})}
+    :level (:log-level ctx :info)}))
 
 (defn init [ctx]
   (let [init-messages (:init-messages ctx)]
