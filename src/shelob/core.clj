@@ -48,3 +48,7 @@
 
 (defn stop []
   (shd/close-driver-pool @shd/driver-pool))
+
+(defn reset [ctx]
+  (stop)
+  (shd/init-driver-pool ctx))
