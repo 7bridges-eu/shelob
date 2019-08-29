@@ -14,10 +14,23 @@
 
 (ns shelob.core
   (:require
+   [clojure.spec.alpha :as sp]
+   [expound.alpha :as e]
    [shelob.driver :as shd]
    [shelob.messages :as shm]
    [taoensso.timbre :as timbre]
    [taoensso.timbre.appenders.core :as appenders]))
+
+(sp/def ::browser keyword?)
+(sp/def ::driver-options (sp/keys :req-un [::browser]))
+(sp/def ::log-file string?)
+(sp/def ::log-level keyword?)
+(sp/def ::pool-size number?)
+(sp/def ::init-messages vector?)
+
+(sp/def ::context
+  (sp/keys :req-un [::driver-options]
+           :opt-un [::log-file ::log-level ::pool-size ::init-messages]))
 
 (defn init-log
   [ctx]
@@ -27,11 +40,13 @@
 
 (defn init
   [ctx]
-  (let [init-messages (:init-messages ctx)]
-    (init-log ctx)
-    (shd/init-driver-pool ctx)
-    (when init-messages
-      (shm/process-messages init-messages))))
+  (if (= (sp/conform ::context ctx) ::sp/invalid)
+    (throw (ex-info "Invalid context" (e/expound ::context ctx)))
+    (let [init-messages (:init-messages ctx)]
+      (init-log ctx)
+      (shd/init-driver-pool ctx)
+      (when init-messages
+        (shm/process-messages init-messages)))))
 
 (defn send-message
   "Sends a single `message` to the executors."
