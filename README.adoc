@@ -38,18 +38,18 @@ A simple DuckDuckGo search:
    :init-messages [{:msg :go :url "https://duckduckgo.com/"}]}))
 
 (defn scrape-result
-[document]
-(map shs/text (shs/select document ".result__url__domain")))
+  [document]
+  (map shs/text (shs/select document ".result__url__domain")))
 
 (defn example
-[]
-(sh/init context)
-(let [msg [{:msg :fill
-            :locator (shb/by-css-selector "#search_form_input_homepage")
-            :text "Clojure"}
-           {:msg :click :locator (shb/by-css-selector "#search_button_homepage")}]]
-  (sh/send-message context scrape-result msg))
-(sh/stop))
+  []
+  (sh/init context)
+  (let [msg [{:msg :fill
+              :locator (shb/by-css-selector "#search_form_input_homepage")
+              :text "Clojure"}
+             {:msg :click :locator (shb/by-css-selector "#search_button_homepage")}]]
+    (sh/send-message context scrape-result msg))
+  (sh/stop))
 ----
 
 Running `(example)` results in:
