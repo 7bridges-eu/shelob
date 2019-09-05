@@ -7,10 +7,11 @@ website and scrape its contents.
 Rationale
 ~~~~~~~~~
 
-Selenium automates web browsing and facilitates web pages scraping.
+Selenium automates web browsing, primarily for testing and administration
+purposes.
 
-Shelob is a tiny wrapper to make it more idiomatic and adherent to the
-Clojure way of coding.
+Shelob wraps Selenium to make it more idiomatic and adherent to the Clojure way
+of coding, and exposes facilities to scrape web pages.
 
 Version
 ~~~~~~~
