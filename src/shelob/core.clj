@@ -51,17 +51,51 @@
 (defn send-message
   "Sends a single `message` to the executors."
   [ctx scrape-fn message]
-  (shm/send-batch-messages ctx [message] scrape-fn))
+  (cond
+    (nil? ctx)
+    (do
+      (timbre/debug (format "`ctx` is invalid: %s" ctx))
+      (throw (ex-info "`ctx` is invalid" {:ctx ctx})))
+
+    (nil? scrape-fn)
+    (do
+      (timbre/debug (format "`scrape-fn` is invalid: %s" scrape-fn))
+      (throw (ex-info "`scrape-fn` is invalid" {:scrape-fn scrape-fn})))
+
+    (nil? message)
+    (do
+      (timbre/debug (format "`message` is invalid: %s" message))
+      (throw (ex-info "`message` is invalid" {:message message})))
+
+    :else
+    (shm/send-batch-messages ctx [message] scrape-fn)))
 
 (defn send-messages
   "Sends a collection of `messages` to the executors."
   [ctx scrape-fn messages]
-  (->> messages
-       (partition-all 500)
-       (reduce
-        (fn [results messages-batch]
-          (into results (shm/send-batch-messages ctx messages-batch scrape-fn)))
-        [])))
+  (cond
+    (nil? ctx)
+    (do
+      (timbre/debug (format "`ctx` is invalid: %s" ctx))
+      (throw (ex-info "`ctx` is invalid" {:ctx ctx})))
+
+    (nil? scrape-fn)
+    (do
+      (timbre/debug (format "`scrape-fn` is invalid: %s" scrape-fn))
+      (throw (ex-info "`scrape-fn` is invalid" {:scrape-fn scrape-fn})))
+
+    (nil? messages)
+    (do
+      (timbre/debug (format "`messages` is invalid: %s" messages))
+      (throw (ex-info "`messages` is invalid" {:messages messages})))
+
+    :else
+    (->> messages
+         (partition-all 500)
+         (reduce
+          (fn [results messages-batch]
+            (into results (shm/send-batch-messages ctx messages-batch scrape-fn)))
+          []))))
 
 (defn stop
   []
