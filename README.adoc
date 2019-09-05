@@ -1,0 +1,69 @@
+Shelob
+------
+
+Shelob wraps https://www.seleniumhq.org/[Selenium] and lets you browse a
+website and scrape its contents.
+
+Rationale
+~~~~~~~~~
+
+Selenium automates web browsing and facilitates web pages scraping.
+
+Shelob is a tiny wrapper to make it more idiomatic and adherent to the
+Clojure way of coding.
+
+Version
+~~~~~~~
+
+image:https://clojars.org/shelob/latest-version.svg[image]
+
+Example
+~~~~~~~
+
+A simple DuckDuckGo search:
+
+* Type "clojure" on the search field
+* Click on the magnify glass to perform the search
+* Retrieve the URLs of the visible results
+
+[source,clojure]
+----
+(require '[shelob.core :as sh])
+(require '[shelob.browser :as shb])
+(require '[shelob.scraper :as shs])
+
+(def context
+  {:driver-options {:browser :firefox}
+   :pool-size 2
+   :init-messages [{:msg :go :url "https://duckduckgo.com/"}]}))
+
+(defn scrape-result
+[document]
+(map shs/text (shs/select document ".result__url__domain")))
+
+(defn example
+[]
+(sh/init context)
+(let [msg [{:msg :fill
+            :locator (shb/by-css-selector "#search_form_input_homepage")
+            :text "Clojure"}
+           {:msg :click :locator (shb/by-css-selector "#search_button_homepage")}]]
+  (sh/send-message context scrape-result msg))
+(sh/stop))
+----
+
+Running `(example)` results in:
+
+[source,clojure]
+----
+user> [https://clojure.org https://en.wikipedia.org https://www.clojure.org
+https://github.com https://learnxinyminutes.com https://www.reddit.com
+https://cursive-ide.com https://marketplace.visualstudio.com https://github.com
+https://leiningen.org]
+----
+
+License
+~~~~~~~
+
+Copyright © 2019 7bridges s.r.l. — Distributed under the Apache License
+2.0.
