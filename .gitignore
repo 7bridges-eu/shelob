@@ -7,3 +7,4 @@ pom.xml.asc
 /.cpcache
 .hgignore
 .hg/
+shelob.log

@@ -1,14 +1,17 @@
-{:aliases {:test {:extra-paths ["test/clj" "test/cljc"]
-                  :extra-deps {com.cognitect/test-runner {:git/url "https://github.com/cognitect-labs/test-runner.git"
-                                                          :sha "5fb4fc46ad0bf2e0ce45eba5b9117a2e89166479"}}
-                  :main-opts ["-m" "cognitect.test-runner"]}
+{:aliases {:outdated {:extra-deps {olical/depot {:mvn/version "1.8.4"}}
+                      :main-opts ["-m" "depot.outdated.main"]}
            :pack {:extra-deps {pack/pack.alpha {:git/url "https://github.com/juxt/pack.alpha.git"
                                                 :sha "2769a6224bfb938e777906ea311b3daf7d2220f5"}}
                   :main-opts ["-m" "mach.pack.alpha.skinny" "--no-libs" "--project-path" "target/shelob.jar"]}
            :deploy {:extra-deps {deps-deploy {:mvn/version "RELEASE"}}
                     :main-opts ["-m" "deps-deploy.deps-deploy" "deploy" "target/shelob.jar" "true"]}}
 
- :deps {org.clojure/clojure {:mvn/version "1.10.1"}
+ :deps {com.taoensso/timbre {:mvn/version "4.10.0"}
+        expound {:mvn/version "0.7.2"}
+        lambdaisland/kaocha {:mvn/version "0.0-529"}
+        org.clojure/clojure {:mvn/version "1.10.1"}
+        org.clojure/core.async {:mvn/version "0.4.500"}
+        org.jsoup/jsoup {:mvn/version "1.12.1"}
         org.seleniumhq.selenium/selenium-server {:mvn/version "3.141.59"}}
 
- :paths ["src"]}
+ :paths ["src" "test"]}

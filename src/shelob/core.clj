@@ -1,98 +1,120 @@
+;; Copyright 2019 7bridges s.r.l.
+;;
+;; Licensed under the Apache License, Version 2.0 (the "License");
+;; you may not use this file except in compliance with the License.
+;; You may obtain a copy of the License at
+;;
+;; http://www.apache.org/licenses/LICENSE-2.0
+;;
+;; Unless required by applicable law or agreed to in writing, software
+;; distributed under the License is distributed on an "AS IS" BASIS,
+;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;; See the License for the specific language governing permissions and
+;; limitations under the License.
+
 (ns shelob.core
-  (:import [org.openqa.selenium WebDriver By]
-           [org.openqa.selenium.firefox FirefoxDriver FirefoxOptions]
-           [org.openqa.selenium.support.ui WebDriverWait ExpectedConditions]))
+  "The entry point of shelob.
+  This namespace contains function to initialise, stop, and reset shelob, and a
+  couple of functions to send messages through shelob.
+  Logging facilities are initialised here."
+  (:require
+   [clojure.spec.alpha :as sp]
+   [expound.alpha :as e]
+   [shelob.driver :as shd]
+   [shelob.messages :as shm]
+   [taoensso.timbre :as timbre]
+   [taoensso.timbre.appenders.core :as appenders]))
 
-(defn web-driver
+(sp/def ::browser keyword?)
+(sp/def ::driver-options (sp/keys :req-un [::browser]))
+(sp/def ::log-file string?)
+(sp/def ::log-level keyword?)
+(sp/def ::pool-size number?)
+(sp/def ::init-messages vector?)
+
+(sp/def ::context
+  (sp/keys :req-un [::driver-options]
+           :opt-un [::log-file ::log-level ::pool-size ::init-messages]))
+
+(defn init-log
+  "Initialises logging system using :log-file and :log-level in `ctx`."
+  [ctx]
+  (timbre/merge-config!
+   {:appenders {:spit (appenders/spit-appender {:fname (:log-file ctx "shelob.log")})}
+    :level (:log-level ctx :info)}))
+
+(defn init
+  "Validates `ctx` against `::context` and initialise shelob."
+  [ctx]
+  (timbre/debug (format "Initialising shelob with context: %s" ctx))
+  (if (= (sp/conform ::context ctx) ::sp/invalid)
+    (throw (ex-info "Invalid context" (e/expound ::context ctx)))
+    (let [init-messages (:init-messages ctx)]
+      (init-log ctx)
+      (shd/init-driver-pool ctx)
+      (when init-messages
+        (shm/process-messages init-messages)))))
+
+(defn send-message
+  "Sends a single `message` to the executors."
+  [ctx scrape-fn message]
+  (timbre/debug (format "Sending message: %s" message))
+  (cond
+    (nil? ctx)
+    (do
+      (timbre/debug (format "`ctx` is invalid: %s" ctx))
+      (throw (ex-info "`ctx` is invalid" {:ctx ctx})))
+
+    (nil? scrape-fn)
+    (do
+      (timbre/debug (format "`scrape-fn` is invalid: %s" scrape-fn))
+      (throw (ex-info "`scrape-fn` is invalid" {:scrape-fn scrape-fn})))
+
+    (nil? message)
+    (do
+      (timbre/debug (format "`message` is invalid: %s" message))
+      (throw (ex-info "`message` is invalid" {:message message})))
+
+    :else
+    (shm/send-batch-messages ctx [message] scrape-fn)))
+
+(defn send-messages
+  "Sends a collection of `messages` to the executors."
+  [ctx scrape-fn messages]
+  (timbre/debug (format "Sending %d messages" (count messages)))
+  (cond
+    (nil? ctx)
+    (do
+      (timbre/debug (format "`ctx` is invalid: %s" ctx))
+      (throw (ex-info "`ctx` is invalid" {:ctx ctx})))
+
+    (nil? scrape-fn)
+    (do
+      (timbre/debug (format "`scrape-fn` is invalid: %s" scrape-fn))
+      (throw (ex-info "`scrape-fn` is invalid" {:scrape-fn scrape-fn})))
+
+    (nil? messages)
+    (do
+      (timbre/debug (format "`messages` is invalid: %s" messages))
+      (throw (ex-info "`messages` is invalid" {:messages messages})))
+
+    :else
+    (->> messages
+         (partition-all 500)
+         (reduce
+          (fn [results messages-batch]
+            (into results (shm/send-batch-messages ctx messages-batch scrape-fn)))
+          []))))
+
+(defn stop
+  "Stops shelob by closing the web drivers in the driver pool."
   []
-  (-> (FirefoxOptions.)
-      (.setHeadless true)
-      (FirefoxDriver. )))
+  (timbre/debug "Stopping shelob")
+  (shd/close-driver-pool @shd/driver-pool))
 
-(defn go
-  [driver url]
-  (.get driver url)
-  driver)
-
-(defn expected-condition
-  [condition locator]
-  (case condition
-    :visibility (ExpectedConditions/visibilityOfElementLocated locator)))
-
-(defn wait-for
-  ([driver condition locator]
-   (wait-for driver condition locator 2))
-  ([driver condition locator timeout]
-   (let [wdw (WebDriverWait. driver timeout)
-         ec (expected-condition condition locator)]
-     (.until wdw ec))))
-
-(defn by
-  [context query]
-  (case context
-    :class-name (By/className query)
-    :css-selector (By/cssSelector query)
-    :id (By/id query)
-    :link-text (By/linkText query)
-    :name (By/name query)
-    :partial-link-text (By/partialLinkText query)
-    :tag-name (By/tagName query)
-    :xpath (By/xpath query)))
-
-(defn find-element
-  [starting-point locator]
-  (.findElement starting-point locator))
-
-(defn find-elements
-  [starting-point locator]
-  (.findElements starting-point locator))
-
-(defn children
-  [starting-point]
-  (find-elements starting-point (by :xpath ".//*")))
-
-(defn children-by
-  [starting-point locator]
-  (find-elements starting-point locator))
-
-(defn fill
-  [element text]
-  (->> [text]
-       into-array
-       (.sendKeys element))
-  element)
-
-(defn fill-by
-  [starting-point locator text]
-  (-> (find-element starting-point locator)
-      (fill text))
-  starting-point)
-
-(defn click
-  [element]
-  (.click element)
-  element)
-
-(defn click-by
-  [starting-point locator]
-  (-> (find-element starting-point locator)
-      click)
-  starting-point)
-
-(defn attribute
-  [element attribute-name]
-  (.getAttribute element attribute-name))
-
-(defn attribute-by
-  [starting-point locator attribute-name]
-  (-> (find-element starting-point locator)
-      (attribute attribute-name)))
-
-(defn text
-  [element]
-  (.getText element))
-
-(defn text-by
-  [starting-point locator]
-  (-> (find-element starting-point locator)
-      text))
+(defn reset
+  "Stops shelob and restart it by initialising the driver pool."
+  [ctx]
+  (timbre/debug "Resetting shelob")
+  (stop)
+  (shd/init-driver-pool ctx))
