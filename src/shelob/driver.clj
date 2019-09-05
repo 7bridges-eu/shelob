@@ -1,4 +1,6 @@
 (ns shelob.driver
+  "This namespace contains facilities to interact with web drivers.
+  The entry point is `init-driver-pool`"
   (:require
    [taoensso.timbre :as timbre])
   (:import
@@ -11,8 +13,10 @@
    [org.openqa.selenium Proxy]))
 
 (def driver-pool (atom []))
+(def driver-pool-size 5)
 
 (defn close-driver-pool
+  "Closes every driver available in `pool`."
   [pool]
   (doseq [driver pool]
     (timbre/debug "Closing driver" (.hashCode driver))
@@ -73,6 +77,8 @@
   (SafariDriver. options))
 
 (defn web-driver
+  "Creates a web driver for `browser` using `options`.
+  Defaults to a Firefox driver is there is no matching keyword."
   [browser options]
   (case browser
     :chrome (chrome-driver options)
@@ -84,6 +90,7 @@
     (firefox-driver options)))
 
 (defn init-driver
+  "Initialises a new web driver with `options` and stores it in the driver pool."
   [options]
   (let [opts (->driver-options options)
         browser (:browser options)
@@ -92,6 +99,8 @@
     driver))
 
 (defn init-driver-pool
-  [{:keys [driver-options pool-size] :or {pool-size 5}}]
+  "Initialises the driver pool of `pool-size` and using `driver-options`.
+  `pool-size` defaults to 5 is not present."
+  [{:keys [driver-options pool-size] :or {pool-size driver-pool-size}}]
   (->> (repeatedly pool-size #(init-driver driver-options))
        (reset! driver-pool)))

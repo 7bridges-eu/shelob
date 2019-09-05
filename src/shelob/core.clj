@@ -13,6 +13,10 @@
 ;; limitations under the License.
 
 (ns shelob.core
+  "The entry point of shelob.
+  This namespace contains function to initialise, stop, and reset shelob, and a
+  couple of functions to send messages through shelob.
+  Logging facilities are initialised here."
   (:require
    [clojure.spec.alpha :as sp]
    [expound.alpha :as e]
@@ -33,12 +37,14 @@
            :opt-un [::log-file ::log-level ::pool-size ::init-messages]))
 
 (defn init-log
+  "Initialises logging system using :log-file and :log-level in `ctx`."
   [ctx]
   (timbre/merge-config!
    {:appenders {:spit (appenders/spit-appender {:fname (:log-file ctx "shelob.log")})}
     :level (:log-level ctx :info)}))
 
 (defn init
+  "Validates `ctx` against `::context` and initialise shelob."
   [ctx]
   (timbre/debug (format "Initialising shelob with context: %s" ctx))
   (if (= (sp/conform ::context ctx) ::sp/invalid)
@@ -101,11 +107,13 @@
           []))))
 
 (defn stop
+  "Stops shelob by closing the web drivers in the driver pool."
   []
   (timbre/debug "Stopping shelob")
   (shd/close-driver-pool @shd/driver-pool))
 
 (defn reset
+  "Stops shelob and restart it by initialising the driver pool."
   [ctx]
   (timbre/debug "Resetting shelob")
   (stop)

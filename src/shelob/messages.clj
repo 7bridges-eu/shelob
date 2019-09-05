@@ -13,6 +13,8 @@
 ;; limitations under the License.
 
 (ns shelob.messages
+  "This namespace contains facilities to operate with messages.
+  The entry point is `send-batch-messages`."
   (:require
    [clojure.core.async :as as]
    [shelob.browser :as shb]
@@ -21,6 +23,9 @@
    [taoensso.timbre :as timbre]))
 
 (defn process-messages
+  "Processes `messages` on a given driver or on one from the driver pool.
+  Every message is validated with `shelob.browser/validate` and processed with
+  `shelob.browser/browser-command`. "
   ([messages]
    (doseq [driver @shd/driver-pool]
      (process-messages driver messages)))
@@ -32,7 +37,9 @@
           shb/browser-command))))
 
 (defn- driver-listener
-  "Create a command executor listener. Messages should always be vectors."
+  "Creates a command executor listener.
+  The messages in `in-ch`, wrapped in a sequence, are processed to get to a page
+  the source of which is placed in `out-ch`."
   [driver in-ch out-ch]
   (as/thread
     (loop []
@@ -43,6 +50,7 @@
         (recur)))))
 
 (defn- scraper-listener
+  "Runs `scrape-fn` on the page source in `in-ch` in a separate thread."
   [in-ch scrape-fn]
   (as/thread
     (when-let [source (as/<!! in-ch)]
@@ -67,8 +75,10 @@
       as/merge))
 
 (defn send-batch-messages
+  "Sends `messages` to be processed with `scrape-fn`. `ctx` can contain the size
+  of the pool, otherwise it is fixed to `shelob.driver/driver-pool-size`."
   [ctx messages scrape-fn]
-  (let [msg-ch (as/chan (:pool-size ctx 5))
+  (let [msg-ch (as/chan (:pool-size ctx shd/driver-pool-size))
         scraper-ch (as/chan)
         result-ch (init-scrapers (count messages) scraper-ch scrape-fn)]
     (init-executors msg-ch scraper-ch)

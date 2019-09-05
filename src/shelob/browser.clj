@@ -13,6 +13,16 @@
 ;; limitations under the License.
 
 (ns shelob.browser
+  "This namespace contains utilities for browser interaction:
+
+  - Locators are meant to be used for looking up page elements.
+
+  - Conditions are meant to be used to determine when the element is present in
+  the page.
+
+  - Messages are the operations available to interact with a page.
+
+  - Specs enable message validation."
   (:require
    [clojure.spec.alpha :as sp]
    [expound.alpha :as e]
