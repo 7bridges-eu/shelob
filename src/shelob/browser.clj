@@ -15,7 +15,8 @@
 (ns shelob.browser
   (:require
    [clojure.spec.alpha :as sp]
-   [expound.alpha :as e])
+   [expound.alpha :as e]
+   [taoensso.timbre :as timbre])
   (:import
    (org.openqa.selenium WebDriver By)
    (org.openqa.selenium.remote RemoteWebDriver)
@@ -151,48 +152,96 @@
 (defmulti browser-command :msg)
 
 (defmethod browser-command :clean-cookies [{:keys [driver]}]
-  (.. driver manage deleteAllCookies))
+  (if driver
+    (.. driver manage deleteAllCookies)
+    (do
+      (timbre/debug (format "Invalid driver: %s" driver))
+      (throw (ex-info "Invalid driver" {:driver driver})))))
 
 (defmethod browser-command :go [{:keys [driver url]}]
-  (.get driver url))
+  (if driver
+    (.get driver url)
+    (do
+      (timbre/debug (format "Invalid driver: %s" driver))
+      (throw (ex-info "Invalid driver" {:driver driver})))))
 
 (defmethod browser-command :wait-for [{:keys [driver condition timeout-seconds]
                                        :or {timeout-seconds 2}}]
-  (let [wdw (WebDriverWait. driver timeout-seconds)]
-    (.until wdw condition)))
+  (if driver
+    (let [wdw (WebDriverWait. driver timeout-seconds)]
+      (.until wdw condition))
+    (do
+      (timbre/debug (format "Invalid driver: %s" driver))
+      (throw (ex-info "Invalid driver" {:driver driver})))))
 
 (defmethod browser-command :find-element [{:keys [driver locator]}]
-  (.findElement driver locator))
+  (if driver
+    (.findElement driver locator)
+    (do
+      (timbre/debug (format "Invalid driver: %s" driver))
+      (throw (ex-info "Invalid driver" {:driver driver})))))
 
 (defmethod browser-command :find-elements [{:keys [driver locator]}]
-  (.findElements driver locator))
+  (if driver
+    (.findElements driver locator)
+    (do
+      (timbre/debug (format "Invalid driver: %s" driver))
+      (throw (ex-info "Invalid driver" {:driver driver})))))
 
 (defmethod browser-command :children [{:keys [driver locator]}]
-  (.findElements driver locator))
+  (if driver
+    (.findElements driver locator)
+    (do
+      (timbre/debug (format "Invalid driver: %s" driver))
+      (throw (ex-info "Invalid driver" {:driver driver})))))
 
 (defmethod browser-command :fill [{:keys [driver locator text]}]
-  (let [element (.findElement driver locator)]
-    (->> [text]
-         into-array
-         (.sendKeys element))))
+  (if driver
+    (let [element (.findElement driver locator)]
+      (->> [text]
+           into-array
+           (.sendKeys element)))
+    (do
+      (timbre/debug (format "Invalid driver: %s" driver))
+      (throw (ex-info "Invalid driver" {:driver driver})))))
 
 (defmethod browser-command :click [{:keys [driver locator]}]
-  (-> (.findElement driver locator)
-      (.click)))
+  (if driver
+    (-> (.findElement driver locator)
+        (.click))
+    (do
+      (timbre/debug (format "Invalid driver: %s" driver))
+      (throw (ex-info "Invalid driver" {:driver driver})))))
 
 (defmethod browser-command :attribute [{:keys [driver locator attribute-name]}]
-  (-> (.findElement driver locator)
-      (.getAttribute attribute-name)))
+  (if driver
+    (-> (.findElement driver locator)
+        (.getAttribute attribute-name))
+    (do
+      (timbre/debug (format "Invalid driver: %s" driver))
+      (throw (ex-info "Invalid driver" {:driver driver})))))
 
 (defmethod browser-command :text [{:keys [driver locator]}]
-  (-> (.findElement driver locator)
-      (.getText)))
+  (if driver
+    (-> (.findElement driver locator)
+        (.getText))
+    (do
+      (timbre/debug (format "Invalid driver: %s" driver))
+      (throw (ex-info "Invalid driver" {:driver driver})))))
 
 (defmethod browser-command :title [{:keys [driver]}]
-  (.getTitle driver))
+  (if driver
+    (.getTitle driver)
+    (do
+      (timbre/debug (format "Invalid driver: %s" driver))
+      (throw (ex-info "Invalid driver" {:driver driver})))))
 
 (defmethod browser-command :source [{:keys [driver]}]
-  (.getPageSource driver))
+  (if driver
+    (.getPageSource driver)
+    (do
+      (timbre/debug (format "Invalid driver: %s" driver))
+      (throw (ex-info "Invalid driver" {:driver driver})))))
 
 ;; Specs
 
