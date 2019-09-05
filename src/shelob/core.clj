@@ -46,7 +46,7 @@
 (defn init
   "Validates `ctx` against `::context` and initialise shelob."
   [ctx]
-  (timbre/debug (format "Initialising shelob with context: %s" ctx))
+  (timbre/debugf "Initialising shelob with context: %s" ctx)
   (if (= (sp/conform ::context ctx) ::sp/invalid)
     (throw (ex-info "Invalid context" (e/expound ::context ctx)))
     (let [init-messages (:init-messages ctx)]
@@ -58,21 +58,21 @@
 (defn send-message
   "Sends a single `message` to the executors."
   [ctx scrape-fn message]
-  (timbre/debug (format "Sending message: %s" message))
+  (timbre/debugf "Sending message: %s" message)
   (cond
     (nil? ctx)
     (do
-      (timbre/debug (format "`ctx` is invalid: %s" ctx))
+      (timbre/debugf "`ctx` is invalid: %s" ctx)
       (throw (ex-info "`ctx` is invalid" {:ctx ctx})))
 
     (nil? scrape-fn)
     (do
-      (timbre/debug (format "`scrape-fn` is invalid: %s" scrape-fn))
+      (timbre/debugf "`scrape-fn` is invalid: %s" scrape-fn)
       (throw (ex-info "`scrape-fn` is invalid" {:scrape-fn scrape-fn})))
 
     (nil? message)
     (do
-      (timbre/debug (format "`message` is invalid: %s" message))
+      (timbre/debugf "`message` is invalid: %s" message)
       (throw (ex-info "`message` is invalid" {:message message})))
 
     :else
@@ -81,21 +81,21 @@
 (defn send-messages
   "Sends a collection of `messages` to the executors."
   [ctx scrape-fn messages]
-  (timbre/debug (format "Sending %d messages" (count messages)))
+  (timbre/debugf "Sending %d messages" (count messages))
   (cond
     (nil? ctx)
     (do
-      (timbre/debug (format "`ctx` is invalid: %s" ctx))
+      (timbre/debugf "`ctx` is invalid: %s" ctx)
       (throw (ex-info "`ctx` is invalid" {:ctx ctx})))
 
     (nil? scrape-fn)
     (do
-      (timbre/debug (format "`scrape-fn` is invalid: %s" scrape-fn))
+      (timbre/debugf "`scrape-fn` is invalid: %s" scrape-fn)
       (throw (ex-info "`scrape-fn` is invalid" {:scrape-fn scrape-fn})))
 
     (nil? messages)
     (do
-      (timbre/debug (format "`messages` is invalid: %s" messages))
+      (timbre/debugf "`messages` is invalid: %s" messages)
       (throw (ex-info "`messages` is invalid" {:messages messages})))
 
     :else
@@ -109,12 +109,12 @@
 (defn stop
   "Stops shelob by closing the web drivers in the driver pool."
   []
-  (timbre/debug "Stopping shelob")
+  (timbre/debug "Stopping shelob" {})
   (shd/close-driver-pool @shd/driver-pool))
 
 (defn reset
   "Stops shelob and restart it by initialising the driver pool."
   [ctx]
-  (timbre/debug "Resetting shelob")
+  (timbre/debug "Resetting shelob" {})
   (stop)
   (shd/init-driver-pool ctx))
