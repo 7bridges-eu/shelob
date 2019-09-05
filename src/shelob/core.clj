@@ -40,6 +40,7 @@
 
 (defn init
   [ctx]
+  (timbre/debug (format "Initialising shelob with context: %s" ctx))
   (if (= (sp/conform ::context ctx) ::sp/invalid)
     (throw (ex-info "Invalid context" (e/expound ::context ctx)))
     (let [init-messages (:init-messages ctx)]
@@ -51,6 +52,7 @@
 (defn send-message
   "Sends a single `message` to the executors."
   [ctx scrape-fn message]
+  (timbre/debug (format "Sending message: %s" message))
   (cond
     (nil? ctx)
     (do
@@ -73,6 +75,7 @@
 (defn send-messages
   "Sends a collection of `messages` to the executors."
   [ctx scrape-fn messages]
+  (timbre/debug (format "Sending %d messages" (count messages)))
   (cond
     (nil? ctx)
     (do
@@ -99,9 +102,11 @@
 
 (defn stop
   []
+  (timbre/debug "Stopping shelob")
   (shd/close-driver-pool @shd/driver-pool))
 
 (defn reset
   [ctx]
+  (timbre/debug "Resetting shelob")
   (stop)
   (shd/init-driver-pool ctx))

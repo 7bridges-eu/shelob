@@ -15,7 +15,7 @@
 (defn close-driver-pool
   [pool]
   (doseq [driver pool]
-    (timbre/debug "Closing " (.hashCode driver))
+    (timbre/debug "Closing driver" (.hashCode driver))
     (.close driver))
   (reset! driver-pool []))
 
@@ -45,7 +45,7 @@
            (.setProxy default-options))
       default-options)))
 
-(defmethod ->driver-options :edge [options]
+(defmethod ->driver-options :edge [_]
   (throw (ex-info "Edge not implemented yet!" {})))
 
 (defn chrome-driver
