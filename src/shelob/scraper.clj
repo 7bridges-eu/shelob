@@ -13,7 +13,6 @@
 ;; limitations under the License.
 
 (ns shelob.scraper
-  (:require [clojure.core.async :as as])
   (:import [org.jsoup Jsoup]
            [org.jsoup.nodes Node Element]))
 
@@ -92,26 +91,3 @@
      (.attr element attribute-name)
      (catch Exception _
        default-return))))
-
-(defn- scraper-exec
-  [f data chan-out chan-err]
-  (try
-    (let [result (f data)]
-      (as/>!! chan-out result))
-    (catch Exception e
-      (as/>!! chan-err e))))
-
-(defn scraper-thread
-  "Initialize a scraper thread."
-  [scraper-fn chan-in chan-out chan-err]
-  (as/thread
-    (loop []
-      (when-let [data (as/<!! chan-in)]
-        (scraper-exec scraper-fn data chan-out chan-err)
-        (recur)))))
-
-(defn scraper-pool
-  "Initialize a pool of scraper-thread"
-  [scraper-fn chan-in chan-out chan-err pool-size]
-  (dotimes [_ pool-size]
-    (scraper-thread scraper-fn chan-in chan-out chan-err)))
