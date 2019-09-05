@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>eu.7bridges</groupId>
   <artifactId>shelob</artifactId>
-  <version>0.1.3</version>
+  <version>0.2.0</version>
   <name>shelob</name>
   <dependencies>
     <dependency>

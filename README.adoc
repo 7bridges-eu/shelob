@@ -15,7 +15,7 @@ Clojure way of coding.
 Version
 ~~~~~~~
 
-image:https://clojars.org/shelob/latest-version.svg[image]
+image:https://img.shields.io/clojars/v/eu.7bridges/shelob.svg[link="https://clojars.org/eu.7bridges/shelob"]
 
 Example
 ~~~~~~~
