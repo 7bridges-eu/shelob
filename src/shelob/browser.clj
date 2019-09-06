@@ -25,8 +25,7 @@
   - Specs enable message validation."
   (:require
    [clojure.spec.alpha :as sp]
-   [expound.alpha :as e]
-   [taoensso.timbre :as timbre])
+   [expound.alpha :as e])
   (:import
    (org.openqa.selenium WebDriver By)
    (org.openqa.selenium.remote RemoteWebDriver)
@@ -162,96 +161,48 @@
 (defmulti browser-command :msg)
 
 (defmethod browser-command :clean-cookies [{:keys [driver]}]
-  (if driver
-    (.. driver manage deleteAllCookies)
-    (do
-      (timbre/debug "Invalid driver" driver)
-      (throw (ex-info "Invalid driver" {:driver driver})))))
+  (.. driver manage deleteAllCookies))
 
 (defmethod browser-command :go [{:keys [driver url]}]
-  (if driver
-    (.get driver url)
-    (do
-      (timbre/debug "Invalid driver" driver)
-      (throw (ex-info "Invalid driver" {:driver driver})))))
+  (.get driver url))
 
 (defmethod browser-command :wait-for [{:keys [driver condition timeout-seconds]
                                        :or {timeout-seconds 2}}]
-  (if driver
-    (let [wdw (WebDriverWait. driver timeout-seconds)]
-      (.until wdw condition))
-    (do
-      (timbre/debug "Invalid driver" driver)
-      (throw (ex-info "Invalid driver" {:driver driver})))))
+  (let [wdw (WebDriverWait. driver timeout-seconds)]
+    (.until wdw condition)))
 
 (defmethod browser-command :find-element [{:keys [driver locator]}]
-  (if driver
-    (.findElement driver locator)
-    (do
-      (timbre/debug "Invalid driver" driver)
-      (throw (ex-info "Invalid driver" {:driver driver})))))
+  (.findElement driver locator))
 
 (defmethod browser-command :find-elements [{:keys [driver locator]}]
-  (if driver
-    (.findElements driver locator)
-    (do
-      (timbre/debug "Invalid driver" driver)
-      (throw (ex-info "Invalid driver" {:driver driver})))))
+  (.findElements driver locator))
 
 (defmethod browser-command :children [{:keys [driver locator]}]
-  (if driver
-    (.findElements driver locator)
-    (do
-      (timbre/debug "Invalid driver" driver)
-      (throw (ex-info "Invalid driver" {:driver driver})))))
+  (.findElements driver locator))
 
 (defmethod browser-command :fill [{:keys [driver locator text]}]
-  (if driver
-    (let [element (.findElement driver locator)]
-      (->> [text]
-           into-array
-           (.sendKeys element)))
-    (do
-      (timbre/debug "Invalid driver" driver)
-      (throw (ex-info "Invalid driver" {:driver driver})))))
+  (let [element (.findElement driver locator)]
+    (->> [text]
+         into-array
+         (.sendKeys element))))
 
 (defmethod browser-command :click [{:keys [driver locator]}]
-  (if driver
-    (-> (.findElement driver locator)
-        (.click))
-    (do
-      (timbre/debug "Invalid driver" driver)
-      (throw (ex-info "Invalid driver" {:driver driver})))))
+  (-> (.findElement driver locator)
+      (.click)))
 
 (defmethod browser-command :attribute [{:keys [driver locator attribute-name]}]
-  (if driver
-    (-> (.findElement driver locator)
-        (.getAttribute attribute-name))
-    (do
-      (timbre/debug "Invalid driver" driver)
-      (throw (ex-info "Invalid driver" {:driver driver})))))
+  (-> (.findElement driver locator)
+      (.getAttribute attribute-name)))
 
 (defmethod browser-command :text [{:keys [driver locator]}]
-  (if driver
-    (-> (.findElement driver locator)
-        (.getText))
-    (do
-      (timbre/debug "Invalid driver" driver)
-      (throw (ex-info "Invalid driver" {:driver driver})))))
+  (-> (.findElement driver locator)
+      (.getText)))
 
 (defmethod browser-command :title [{:keys [driver]}]
-  (if driver
-    (.getTitle driver)
-    (do
-      (timbre/debug "Invalid driver" driver)
-      (throw (ex-info "Invalid driver" {:driver driver})))))
+  (.getTitle driver))
 
 (defmethod browser-command :source [{:keys [driver]}]
-  (if driver
-    (.getPageSource driver)
-    (do
-      (timbre/debug "Invalid driver" driver)
-      (throw (ex-info "Invalid driver" {:driver driver})))))
+  (.getPageSource driver))
 
 ;; Specs
 
