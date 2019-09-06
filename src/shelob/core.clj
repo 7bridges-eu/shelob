@@ -109,12 +109,12 @@
 (defn stop
   "Stops shelob by closing the web drivers in the driver pool."
   []
-  (timbre/debug "Stopping shelob" {})
+  (timbre/debug "Stopping shelob")
   (shd/close-driver-pool @shd/driver-pool))
 
 (defn reset
   "Stops shelob and restart it by initialising the driver pool."
   [ctx]
-  (timbre/debug "Resetting shelob" {})
+  (timbre/debug "Resetting shelob")
   (stop)
   (shd/init-driver-pool ctx))

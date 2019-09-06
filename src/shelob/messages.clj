@@ -31,7 +31,7 @@
      (process-messages driver messages)))
   ([driver messages]
    (doseq [message messages]
-     (timbre/debug message {})
+     (timbre/debug message)
      (->> (assoc message :driver driver)
           shb/validate
           shb/browser-command))))
@@ -61,7 +61,7 @@
 (defn init-executors
   "Starts a thread for each instanced driver and returns a merged channel."
   [in-ch out-ch]
-  (timbre/debug "Initialize executors..." {})
+  (timbre/debug "Initialize executors...")
   (->> @shd/driver-pool
        (reduce (fn [acc driver] (conj acc (driver-listener driver in-ch out-ch))) [])
        as/merge))
@@ -69,7 +69,7 @@
 (defn init-scrapers
   "Starts `n` scraper threads with `ctx` and returns a merged channel."
   [n in-ch scrape-fn]
-  (timbre/debug "Initialize scrapers..." {})
+  (timbre/debug "Initialize scrapers...")
   (-> n
       (repeatedly #(scraper-listener in-ch scrape-fn))
       as/merge))
