@@ -1,8 +1,8 @@
 Shelob
 ------
 
-Shelob wraps https://www.seleniumhq.org/[Selenium] and lets you browse a
-website and scrape its contents.
+Shelob wraps https://www.seleniumhq.org/[Selenium] to let you browse a website
+and scrape its contents.
 
 Rationale
 ~~~~~~~~~
