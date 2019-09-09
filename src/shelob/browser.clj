@@ -28,6 +28,7 @@
    [expound.alpha :as e])
   (:import
    (org.openqa.selenium WebDriver By)
+   (org.openqa.selenium.interactions Action Actions)
    (org.openqa.selenium.remote RemoteWebDriver)
    (org.openqa.selenium.support.ui ExpectedConditions)
    (org.openqa.selenium.support.ui WebDriverWait)))
@@ -197,6 +198,14 @@
 (defmethod browser-command :text [{:keys [driver locator]}]
   (-> (.findElement driver locator)
       (.getText)))
+
+;; moves the mouse pointer to a given element
+(defmethod shb/browser-command :mouse-move [{:keys [driver locator]}]
+  (let [el (.findElement driver locator)
+        action (doto (Actions. driver)
+                 (.moveToElement el)
+                 (.build))]
+    (.perform action)))
 
 (defmethod browser-command :title [{:keys [driver]}]
   (.getTitle driver))
