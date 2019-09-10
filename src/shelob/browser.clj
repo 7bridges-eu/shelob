@@ -200,7 +200,7 @@
       (.getText)))
 
 ;; moves the mouse pointer to a given element
-(defmethod shb/browser-command :mouse-move [{:keys [driver locator]}]
+(defmethod browser-command :mouse-move [{:keys [driver locator]}]
   (let [el (.findElement driver locator)
         action (doto (Actions. driver)
                  (.moveToElement el)
