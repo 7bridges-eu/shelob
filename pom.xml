@@ -1,33 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-      
+        
+  
   
   <modelVersion>4.0.0</modelVersion>
-    
+      
+  
   <groupId>eu.7bridges</groupId>
-    
+      
+  
   
   <artifactId>shelob</artifactId>
-    
-  <version>0.2.3</version>
-    
+      
+  
+  <version>0.2.4-SNAPSHOT</version>
+      
+  
   <name>shelob</name>
-    
+      
+  
   <dependencies>
+    <dependency>
+      <groupId>org.seleniumhq.selenium</groupId>
+      <artifactId>htmlunit-driver</artifactId>
+      <version>2.36.0</version>
+    </dependency>
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>clojure</artifactId>
       <version>1.10.1</version>
-    </dependency>
-    <dependency>
-      <groupId>com.taoensso</groupId>
-      <artifactId>timbre</artifactId>
-      <version>4.10.0</version>
-    </dependency>
-    <dependency>
-      <groupId>expound</groupId>
-      <artifactId>expound</artifactId>
-      <version>0.7.2</version>
     </dependency>
     <dependency>
       <groupId>lambdaisland</groupId>
@@ -35,9 +36,24 @@
       <version>0.0-529</version>
     </dependency>
     <dependency>
-      <groupId>org.clojure</groupId>
-      <artifactId>core.async</artifactId>
-      <version>0.4.500</version>
+      <groupId>org.seleniumhq.selenium</groupId>
+      <artifactId>selenium-api</artifactId>
+      <version>3.141.59</version>
+    </dependency>
+    <dependency>
+      <groupId>expound</groupId>
+      <artifactId>expound</artifactId>
+      <version>0.7.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.seleniumhq.selenium</groupId>
+      <artifactId>selenium-server</artifactId>
+      <version>3.141.59</version>
+    </dependency>
+    <dependency>
+      <groupId>com.taoensso</groupId>
+      <artifactId>timbre</artifactId>
+      <version>4.10.0</version>
     </dependency>
     <dependency>
       <groupId>org.jsoup</groupId>
@@ -45,19 +61,23 @@
       <version>1.12.1</version>
     </dependency>
     <dependency>
-      <groupId>org.seleniumhq.selenium</groupId>
-      <artifactId>selenium-server</artifactId>
-      <version>3.141.59</version>
+      <groupId>org.clojure</groupId>
+      <artifactId>core.async</artifactId>
+      <version>0.4.500</version>
     </dependency>
   </dependencies>
-      
+        
+  
   
   <build>
-        
+            
+    
     <sourceDirectory>src</sourceDirectory>
-      
+          
+  
   </build>
-      
+        
+  
   
   <repositories>
     <repository>
@@ -65,18 +85,25 @@
       <url>https://repo.clojars.org/</url>
     </repository>
   </repositories>
-      
+        
+  
   
   <scm>
-        
+            
+    
     <connection>scm:git:git://github.com/7bridges-eu/shelob.git</connection>
-        
+            
+    
     <developerConnection>scm:git:ssh://github.com/7bridges-eu/shelob.git</developerConnection>
-        
+            
+    
     <tag>v0.2.3</tag>
-        
+            
+    
     <url>https://github.com/7bridges-eu/shelob</url>
-      
-  </scm>
+          
   
+  </scm>
+    
+
 </project>
