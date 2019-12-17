@@ -51,12 +51,17 @@
 
 (defn- scraper-listener
   "Runs `scrape-fn` on the page source in `in-ch` in a separate thread."
-  [in-ch scrape-fn]
+  [in-ch scrape-fn exception-fn]
   (as/thread
     (when-let [source (as/<!! in-ch)]
-      (->> source
-           shs/parse
-           scrape-fn))))
+      (try
+        (->> source
+             shs/parse
+             scrape-fn)
+        (catch Exception e
+          (if exception-fn
+            (exception-fn source e)
+            (throw (ex-info "Error on scrape-fn" e))))))))
 
 (defn init-executors
   "Starts a thread for each instanced driver and returns a merged channel."
@@ -68,19 +73,19 @@
 
 (defn init-scrapers
   "Starts `n` scraper threads with `ctx` and returns a merged channel."
-  [n in-ch scrape-fn]
+  [n in-ch scrape-fn exception-fn]
   (timbre/debug "Initialize scrapers...")
   (-> n
-      (repeatedly #(scraper-listener in-ch scrape-fn))
+      (repeatedly #(scraper-listener in-ch scrape-fn exception-fn))
       as/merge))
 
 (defn send-batch-messages
   "Sends `messages` to be processed with `scrape-fn`. `ctx` can contain the size
   of the pool, otherwise it is fixed to `shelob.driver/driver-pool-size`."
-  [ctx messages scrape-fn]
+  [ctx messages scrape-fn exception-fn]
   (let [msg-ch (as/chan (:pool-size ctx shd/driver-pool-size))
         scraper-ch (as/chan)
-        result-ch (init-scrapers (count messages) scraper-ch scrape-fn)]
+        result-ch (init-scrapers (count messages) scraper-ch scrape-fn exception-fn)]
     (init-executors msg-ch scraper-ch)
     (as/onto-chan msg-ch messages)
     (let [results (as/<!! (as/reduce into [] result-ch))]

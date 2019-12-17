@@ -57,7 +57,7 @@
 
 (defn send-message
   "Sends a single `message` to the executors."
-  [ctx scrape-fn message]
+  [ctx scrape-fn message & [exception-fn]]
   (timbre/debugf "Sending message: %s" message)
   (cond
     (nil? ctx)
@@ -76,11 +76,11 @@
       (throw (ex-info "`message` is invalid" {:message message})))
 
     :else
-    (shm/send-batch-messages ctx [message] scrape-fn)))
+    (shm/send-batch-messages ctx [message] scrape-fn exception-fn)))
 
 (defn send-messages
   "Sends a collection of `messages` to the executors."
-  [ctx scrape-fn messages]
+  [ctx scrape-fn messages & [exception-fn]]
   (timbre/debugf "Sending %d messages" (count messages))
   (cond
     (nil? ctx)
@@ -103,7 +103,7 @@
          (partition-all 500)
          (reduce
           (fn [results messages-batch]
-            (into results (shm/send-batch-messages ctx messages-batch scrape-fn)))
+            (into results (shm/send-batch-messages ctx messages-batch scrape-fn exception-fn)))
           []))))
 
 (defn stop
