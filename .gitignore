@@ -12,3 +12,4 @@ shelob.log
 .classpath
 .project
 .settings
+target
