@@ -63,6 +63,29 @@ https://cursive-ide.com https://marketplace.visualstudio.com https://github.com
 https://leiningen.org]
 ----
 
+Exception management
+~~~~~~~
+
+By default, Shelob prints out exceptions on standard output and continues the crawling process; you can customise exception management by passing a custom exception management function to `send-message`, as such:
+
+[source,clojure]
+----
+
+....
+
+(defn exception-custom-fn
+  "Prints out exception with a custom message"
+  [_source e]
+  (println "An exception occurred, this is a custom message -" (.getMessage e)))
+
+(defn example
+  []
+  (sh/init context)
+  (let [msg [...]
+    (sh/send-message context scrape-result exception-custom-fn msg))
+  (sh/stop))
+----
+
 License
 ~~~~~~~
 
