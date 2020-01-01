@@ -36,11 +36,13 @@ A simple DuckDuckGo search:
 (def context
   {:driver-options {:browser :firefox}
    :pool-size 2
-   :init-messages [{:msg :go :url "https://duckduckgo.com/"}]}))
+   :init-messages [{:msg :go :url "https://duckduckgo.com/html/"}]})
 
 (defn scrape-result
   [document]
-  (map shs/text (shs/select document ".result__url__domain")))
+  (println (map 
+            #(shs/attribute % "href") 
+            (shs/select document ".result__a"))))
 
 (defn example
   []
@@ -48,7 +50,10 @@ A simple DuckDuckGo search:
   (let [msg [{:msg :fill
               :locator (shb/by-css-selector "#search_form_input_homepage")
               :text "Clojure"}
-             {:msg :click :locator (shb/by-css-selector "#search_button_homepage")}]]
+             {:msg :click :locator (shb/by-css-selector "#search_button_homepage")}
+             {:msg :wait-for :condition 
+              (shb/presence-of-element-located 
+               (shb/by-css-selector ".serp__results"))}]]
     (sh/send-message context scrape-result msg))
   (sh/stop))
 ----
@@ -57,10 +62,8 @@ Running `(example)` results in:
 
 [source,clojure]
 ----
-user> [https://clojure.org https://en.wikipedia.org https://www.clojure.org
-https://github.com https://learnxinyminutes.com https://www.reddit.com
-https://cursive-ide.com https://marketplace.visualstudio.com https://github.com
-https://leiningen.org]
+user> (https://clojure.org/ https://en.wikipedia.org/wiki/Clojure https://github.com/clojure/clojure https://www.reddit.com/r/Clojure/ https://clojuredocs.org/ https://clojuredocs.org/clojure.core/when https://www.braveclojure.com/ https://repl.it/languages/clojure https://www.zhihu.com/question/21446061 https://leiningen.org/ https://clojure.github.io/clojure/ https://github.com/clojure https://www.tutorialspoint.com/clojure/clojure_basic_syntax.htm https://learnxinyminutes.com/docs/clojure/ https://cursive-ide.com/ https://clojurescript.org/ https://www.tutorialspoint.com/clojure/clojure_loops.htm http://www.clojurekoans.com/ https://www.braveclojure.com/clojure-for-the-brave-and-true/ https://marketplace.visualstudio.com/items?itemName=avli.clojure https://www.youtube.com/user/ClojureTV https://www.slant.co/options/1538/~clojure-review https://www.amazon.com/Clojure-Programming-Practical-Lisp-World/dp/1449394701 https://kimh.github.io/clojure-by-example/ https://ja.wikipedia.org/wiki/Clojure http://www.4clojure.
+com/ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures https://www.clojure.org/guides/getting_started https://en.wikibooks.org/wiki/Clojure_Programming)
 ----
 
 License
