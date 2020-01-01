@@ -36,7 +36,7 @@ A simple DuckDuckGo search:
 (def context
   {:driver-options {:browser :firefox}
    :pool-size 2
-   :init-messages [{:msg :go :url "https://duckduckgo.com/"}]}))
+   :init-messages [{:msg :go :url "https://duckduckgo.com/"}]})
 
 (defn scrape-result
   [document]
