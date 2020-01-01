@@ -41,7 +41,12 @@
   [ctx]
   (timbre/merge-config!
    {:appenders {:spit (appenders/spit-appender {:fname (:log-file ctx "shelob.log")})}
-    :level (:log-level ctx :info)}))
+    :level (:log-level ctx :debug)}))
+
+(defn exception-default-fn
+  "Prints out exception"
+  [_source e]
+  (println "Exception!" (.getMessage e)))
 
 (defn init
   "Validates `ctx` against `::context` and initialise shelob."
@@ -53,12 +58,7 @@
       (init-log ctx)
       (shd/init-driver-pool ctx)
       (when init-messages
-        (shm/process-messages init-messages)))))
-
-(defn exception-default-fn
-  "Prints out exception"
-  [source e]
-  (println "Exception!" (.getMessage e)))
+        (shm/process-messages init-messages exception-default-fn)))))
 
 (defn send-message
   "Sends a single `message` to the executors."
@@ -87,31 +87,33 @@
 
 (defn send-messages
   "Sends a collection of `messages` to the executors."
-  [ctx scrape-fn messages & [exception-fn]]
-  (timbre/debugf "Sending %d messages" (count messages))
-  (cond
-    (nil? ctx)
-    (do
-      (timbre/debugf "`ctx` is invalid: %s" ctx)
-      (throw (ex-info "`ctx` is invalid" {:ctx ctx})))
+  ([ctx scrape-fn messages]
+   (send-messages ctx scrape-fn exception-default-fn messages))
+  ([ctx scrape-fn exception-fn messages]
+   (timbre/debugf "Sending %d messages" (count messages))
+   (cond
+     (nil? ctx)
+     (do
+       (timbre/debugf "`ctx` is invalid: %s" ctx)
+       (throw (ex-info "`ctx` is invalid" {:ctx ctx})))
 
-    (nil? scrape-fn)
-    (do
-      (timbre/debugf "`scrape-fn` is invalid: %s" scrape-fn)
-      (throw (ex-info "`scrape-fn` is invalid" {:scrape-fn scrape-fn})))
+     (nil? scrape-fn)
+     (do
+       (timbre/debugf "`scrape-fn` is invalid: %s" scrape-fn)
+       (throw (ex-info "`scrape-fn` is invalid" {:scrape-fn scrape-fn})))
 
-    (nil? messages)
-    (do
-      (timbre/debugf "`messages` is invalid: %s" messages)
-      (throw (ex-info "`messages` is invalid" {:messages messages})))
+     (nil? messages)
+     (do
+       (timbre/debugf "`messages` is invalid: %s" messages)
+       (throw (ex-info "`messages` is invalid" {:messages messages})))
 
-    :else
-    (->> messages
-         (partition-all 500)
-         (reduce
-          (fn [results messages-batch]
-            (into results (shm/send-batch-messages ctx messages-batch scrape-fn exception-fn)))
-          []))))
+     :else
+     (->> messages
+          (partition-all 500)
+          (reduce
+           (fn [results messages-batch]
+             (into results (shm/send-batch-messages ctx messages-batch scrape-fn exception-fn)))
+           [])))))
 
 (defn stop
   "Stops shelob by closing the web drivers in the driver pool."
