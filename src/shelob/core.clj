@@ -55,28 +55,35 @@
       (when init-messages
         (shm/process-messages init-messages)))))
 
+(defn exception-default-fn
+  "Prints out exception"
+  [source e]
+  (println "Exception!" (.getMessage e)))
+
 (defn send-message
   "Sends a single `message` to the executors."
-  [ctx scrape-fn message & [exception-fn]]
-  (timbre/debugf "Sending message: %s" message)
-  (cond
-    (nil? ctx)
-    (do
-      (timbre/debugf "`ctx` is invalid: %s" ctx)
-      (throw (ex-info "`ctx` is invalid" {:ctx ctx})))
+  ([ctx scrape-fn message]
+   (send-message ctx scrape-fn exception-default-fn message))
+  ([ctx scrape-fn exception-fn message]
+   (timbre/debugf "Sending message: %s" message)
+   (cond
+     (nil? ctx)
+     (do
+       (timbre/debugf "`ctx` is invalid: %s" ctx)
+       (throw (ex-info "`ctx` is invalid" {:ctx ctx})))
 
-    (nil? scrape-fn)
-    (do
-      (timbre/debugf "`scrape-fn` is invalid: %s" scrape-fn)
-      (throw (ex-info "`scrape-fn` is invalid" {:scrape-fn scrape-fn})))
+     (nil? scrape-fn)
+     (do
+       (timbre/debugf "`scrape-fn` is invalid: %s" scrape-fn)
+       (throw (ex-info "`scrape-fn` is invalid" {:scrape-fn scrape-fn})))
 
-    (nil? message)
-    (do
-      (timbre/debugf "`message` is invalid: %s" message)
-      (throw (ex-info "`message` is invalid" {:message message})))
+     (nil? message)
+     (do
+       (timbre/debugf "`message` is invalid: %s" message)
+       (throw (ex-info "`message` is invalid" {:message message})))
 
-    :else
-    (shm/send-batch-messages ctx [message] scrape-fn exception-fn)))
+     :else
+     (shm/send-batch-messages ctx [message] scrape-fn exception-fn))))
 
 (defn send-messages
   "Sends a collection of `messages` to the executors."
