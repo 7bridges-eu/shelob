@@ -41,7 +41,7 @@
   [ctx]
   (timbre/merge-config!
    {:appenders {:spit (appenders/spit-appender {:fname (:log-file ctx "shelob.log")})}
-    :level (:log-level ctx :debug)}))
+    :level (:log-level ctx :info)}))
 
 (defn exception-default-fn
   "Prints out exception"
