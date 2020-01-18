@@ -38,7 +38,7 @@
                   shb/browser-command)
                      (catch Exception e
           (if exception-fn
-            (exception-fn message e)
+            (exception-fn messages e)
             (throw (ex-info "Error on scrape-fn" e))))))))
 
 (defn- driver-listener
