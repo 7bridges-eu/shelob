@@ -16,7 +16,7 @@
 
 (deftest send-message-test
   (with-redefs [timbre/debug (fn [& _])
-                shm/send-batch-messages (fn [_ _ _])]
+                shm/send-batch-messages (fn [_ _ _ _])]
     (is (nil? (sh/send-message {:driver-options {:browser :firefox}} identity {})))
     (is (thrown? Exception (sh/send-message nil identity {})))
     (is (thrown? Exception
@@ -26,7 +26,7 @@
 
 (deftest send-messages-test
   (with-redefs [timbre/debug (fn [& _])
-                shm/send-batch-messages (fn [_ _ _])]
+                shm/send-batch-messages (fn [_ _ _ _])]
     (is (empty? (sh/send-messages {:driver-options {:browser :firefox}} identity [{}])))
     (is (thrown? Exception (sh/send-messages nil identity [{}])))
     (is (thrown? Exception
