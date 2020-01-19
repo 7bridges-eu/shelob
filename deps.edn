@@ -7,10 +7,10 @@
                     :main-opts ["-m" "deps-deploy.deps-deploy" "deploy" "target/shelob.jar" "true"]}}
 
  :deps {com.taoensso/timbre {:mvn/version "4.10.0"}
-        expound {:mvn/version "0.7.2"}
-        lambdaisland/kaocha {:mvn/version "0.0-529"}
+        expound {:mvn/version "0.8.4"}
+        lambdaisland/kaocha {:mvn/version "0.0-573"}
         org.clojure/clojure {:mvn/version "1.10.1"}
-        org.clojure/core.async {:mvn/version "0.4.500"}
+        org.clojure/core.async {:mvn/version "0.7.559"}
         org.jsoup/jsoup {:mvn/version "1.12.1"}
         org.seleniumhq.selenium/selenium-server {:mvn/version "3.141.59"}
         org.seleniumhq.selenium/selenium-api {:mvn/version "3.141.59"}
