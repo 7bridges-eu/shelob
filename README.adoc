@@ -66,6 +66,29 @@ user> (https://clojure.org/ https://en.wikipedia.org/wiki/Clojure https://github
 com/ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures https://www.clojure.org/guides/getting_started https://en.wikibooks.org/wiki/Clojure_Programming)
 ----
 
+Exception management
+~~~~~~~
+
+By default, Shelob prints out exceptions on standard output and continues the crawling process; you can customise exception management by passing a custom exception management function to `send-message`, as such:
+
+[source,clojure]
+----
+
+....
+
+(defn exception-custom-fn
+  "Prints out exception with a custom message"
+  [_source e]
+  (println "An exception occurred, this is a custom message -" (.getMessage e)))
+
+(defn example
+  []
+  (sh/init context)
+  (let [msg [...]
+    (sh/send-message context scrape-result exception-custom-fn msg))
+  (sh/stop))
+----
+
 License
 ~~~~~~~
 

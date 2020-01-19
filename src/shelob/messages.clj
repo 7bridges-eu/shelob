@@ -26,25 +26,30 @@
   "Processes `messages` on a given driver or on one from the driver pool.
   Every message is validated with `shelob.browser/validate` and processed with
   `shelob.browser/browser-command`. "
-  ([messages]
+  ([messages exception-fn]
    (doseq [driver @shd/driver-pool]
-     (process-messages driver messages)))
-  ([driver messages]
+     (process-messages driver messages exception-fn)))
+  ([driver messages exception-fn]
    (doseq [message messages]
      (timbre/debug message)
-     (->> (assoc message :driver driver)
-          shb/validate
-          shb/browser-command))))
+           (try
+             (->> (assoc message :driver driver)
+                  shb/validate
+                  shb/browser-command)
+                     (catch Exception e
+          (if exception-fn
+            (exception-fn messages e)
+            (throw (ex-info "Error on scrape-fn" e))))))))
 
 (defn- driver-listener
   "Creates a command executor listener.
   The messages in `in-ch`, wrapped in a sequence, are processed to get to a page
   the source of which is placed in `out-ch`."
-  [driver in-ch out-ch]
+  [driver in-ch out-ch exception-fn]
   (as/thread
     (loop []
       (when-let [messages (as/<!! in-ch)]
-        (process-messages driver messages)
+        (process-messages driver messages exception-fn)
         (->> (.getPageSource driver)
              (as/>!! out-ch))
         (recur)))))
@@ -55,15 +60,15 @@
   (as/thread
     (when-let [source (as/<!! in-ch)]
       (->> source
-           shs/parse
-           scrape-fn))))
+            shs/parse
+            scrape-fn))))
 
 (defn init-executors
   "Starts a thread for each instanced driver and returns a merged channel."
-  [in-ch out-ch]
+  [in-ch out-ch exception-fn]
   (timbre/debug "Initialize executors...")
   (->> @shd/driver-pool
-       (reduce (fn [acc driver] (conj acc (driver-listener driver in-ch out-ch))) [])
+       (reduce (fn [acc driver] (conj acc (driver-listener driver in-ch out-ch exception-fn))) [])
        as/merge))
 
 (defn init-scrapers
@@ -77,11 +82,11 @@
 (defn send-batch-messages
   "Sends `messages` to be processed with `scrape-fn`. `ctx` can contain the size
   of the pool, otherwise it is fixed to `shelob.driver/driver-pool-size`."
-  [ctx messages scrape-fn]
+  [ctx messages scrape-fn exception-fn]
   (let [msg-ch (as/chan (:pool-size ctx shd/driver-pool-size))
         scraper-ch (as/chan)
         result-ch (init-scrapers (count messages) scraper-ch scrape-fn)]
-    (init-executors msg-ch scraper-ch)
+    (init-executors msg-ch scraper-ch exception-fn)
     (as/onto-chan msg-ch messages)
     (let [results (as/<!! (as/reduce into [] result-ch))]
       (as/close! msg-ch)

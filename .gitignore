@@ -8,3 +8,8 @@ pom.xml.asc
 .hgignore
 .hg/
 shelob.log
+
+.classpath
+.project
+.settings
+target
