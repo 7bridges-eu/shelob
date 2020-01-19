@@ -67,9 +67,11 @@ com/ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures https://ww
 ----
 
 Exception management
-~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
-By default, Shelob prints out exceptions on standard output and continues the crawling process; you can customise exception management by passing a custom exception management function to `send-message`, as such:
+By default, Shelob prints out exceptions on standard output and continues the
+crawling process; you can customise exception management by passing a custom
+exception management function to `send-message`, as such:
 
 [source,clojure]
 ----
